@@ -21,12 +21,13 @@ Built for **The Infinity Hack '26**.
 - **Role-based access, enforced on the server** (not just hidden in the UI):
   - **Admin**: all projects, clients, and the transcript page.
   - **Manager**: only the projects they manage (and those projects' clients).
-  - **Agent**: only their own tasks, plus the related project name and manager. Other agents' tasks are never returned.
-  - Opening someone else's project directly by URL shows *"You don't have access"* (`403`).
+  - **Agent**: only their own tasks, plus the related project name and manager. Other agents' tasks are never returned. Agents see the clients of their projects (contact details only; internal client notes are hidden by the API).
+  - Opening someone else's project or client directly by URL shows *"You don't have access"* (`403`).
 - **Screens**: login, dashboard with project cards and totals, project detail with task table, Create from Transcript, My Tasks (agents), Team Directory (read-only) with a detail page per person, Clients.
 - **Team member detail**: click anyone in the Team Directory to see what they are working on (an agent's tasks, or the projects a manager runs), with tasks, hours and next deadline. It only shows work the viewer is already allowed to see: the admin sees everything, a manager sees an agent's tasks only in the manager's own projects, and an agent sees no other agent's tasks.
 - **Clients (CRM)**: client list with search, and a client detail page with contact person, email, phone, website, notes and the client's projects. Clients are created automatically from the transcript (matched by name, so re-running never duplicates them). The admin and the client's project manager can edit details; only the admin can rename.
 - **Saved records**: everything is stored in PostgreSQL and remains after a refresh.
+- **API documentation**: interactive Swagger UI at [`/api-docs`](https://infinity-hackathon.vercel.app/api-docs) generated from an OpenAPI 3 spec ([`public/openapi.yaml`](public/openapi.yaml)); log in with "Try it out" and call any endpoint.
 
 ## Technology Stack
 - Frontend: Next.js 16 (App Router), React 19, Tailwind CSS 4, TypeScript
@@ -79,8 +80,9 @@ Other useful commands:
 | Command | What it does |
 | --- | --- |
 | `npm run db:reset` | Deletes all projects, tasks, clients and transcript runs. **Keeps the users.** Use it to repeat the demo from a clean state. |
-| `npm run ai:test` | Runs the supplied transcript through the AI and compares the result with the answer key (does not touch the database) |
-| `npm run typecheck` | TypeScript check |
+| `npm run ai:test` | Runs the supplied transcript through the AI and compares the result with the answer key (does not touch the database). `npm run ai:test -- other.txt` tests any transcript. |
+| `npm run typecheck` / `npm run lint` | TypeScript / ESLint checks |
+| `npx prisma studio` | Browse the database in the browser |
 | `npm run build` / `npm start` | Production build and server |
 
 ## Environment Variables
@@ -95,7 +97,7 @@ Other useful commands:
 `.env.example` contains placeholders only. Real keys and database passwords are never committed, and no secret is exposed to the browser (no `NEXT_PUBLIC_*` variables).
 
 ## Demo Login Accounts
-These emails are fictional identifiers, not mailboxes. Signup, email verification and forgot password are not needed. The accounts are created by `npm run db:seed` (already done on the live database).
+The password is **`Demo123!`** for every account (case-sensitive: capital **D**, ends with **!**). These emails are fictional identifiers, not mailboxes. Signup, email verification and forgot password are not needed. The accounts are created by `npm run db:seed` (already done on the live database).
 
 | Role | Name | Demo email | Password |
 | --- | --- | --- | --- |
@@ -113,7 +115,7 @@ These emails are fictional identifiers, not mailboxes. Signup, email verificatio
 ## How Judges Can Test
 1. Log in as **admin** and open **Create from Transcript**.
 2. Click **Load supplied meeting transcript** (the same text is in [`docs/transcript.txt`](docs/transcript.txt)), or paste your own.
-3. Click **Create from Transcript**. Expect **3 projects and 12 tasks** after about 10–20 seconds:
+3. Click **Create from Transcript**. Expect **3 projects and 12 tasks** after about 10–25 seconds:
 
    | Project | Manager | Deadline | Tasks | Hours |
    | --- | --- | --- | --- | --- |
@@ -128,6 +130,8 @@ These emails are fictional identifiers, not mailboxes. Signup, email verificatio
 8. Check direct access: as admin, copy a QuickServe project URL; as Ali, open it. You'll see *"You don't have access to this project"*. The API returns `403` for the same request.
 9. Refresh any page: the data is still there.
 10. Changed input: load the transcript, change Usman's final QuickServe integration estimate to **12 hours, 23 October**, and create again. On the live site this adds a **new set of 3 projects** next to the existing ones (there is no reset button for judges). Open the new **QuickServe Mobile App** and check *Mobile integration and testing* is **12 hours, due 23 October** (QuickServe total **48 hours**); every other task is unchanged.
+
+11. Optional: open [`/api-docs`](https://infinity-hackathon.vercel.app/api-docs), log in with *Try it out* on `POST /api/auth/login` (e.g. as Ali), then call `GET /api/projects/{id}` with a QuickServe project id to see the `403` directly.
 
 **Resetting between tests (local runs only):** `npm run db:reset` removes generated projects, tasks, clients and transcript runs but keeps the ten seeded users. Creating from the same transcript twice without a reset adds a second copy of the projects (clients are reused).
 
@@ -155,7 +159,7 @@ These emails are fictional identifiers, not mailboxes. Signup, email verificatio
 - **AI rate limits**: Groq's free tier can rate-limit. The app retries and falls back to a second model; if both are busy, it shows "The AI service is busy (rate limit reached). Please wait about a minute and try again." and saves nothing.
 - **Processing time**: creating from a transcript takes about 10–25 seconds (about 22 s on the live site).
 - **Database connections**: Aiven's free plan allows few connections, so the app keeps its connection pool small (`connection_limit`).
-- **Duplicates**: running the same transcript twice creates the projects twice. Use `npm run db:reset` between demo runs.
+- **Duplicates**: running the same transcript twice creates the projects twice (clients are reused). Use `npm run db:reset` between local demo runs; the team resets the live database before judging.
 - **No editing of projects or tasks**: created projects and tasks are read-only (editing was optional in the brief). Client details can be edited.
 - Out of scope by design: signup, password reset, user management, cost calculation, progress tracking and charts.
 
@@ -164,4 +168,5 @@ These emails are fictional identifiers, not mailboxes. Signup, email verificatio
 - Live link: https://infinity-hackathon.vercel.app · Demo video: live demo at the link above
 - Setup and seed commands: documented above
 - Demo login accounts: confirmed working
-- Features completed: seeded login, role-based access, AI transcript → projects and tasks with validation and all-or-nothing save, project/task screens, My Tasks, Team Directory with team member detail, Clients (CRM)
+- Features completed: seeded login, role-based access, AI transcript → projects and tasks with validation and all-or-nothing save, project/task screens, My Tasks, Team Directory with team member detail, Clients (CRM), Swagger API docs
+- Documentation: [`docs/DOCUMENTATION.md`](docs/DOCUMENTATION.md), [`docs/API.md`](docs/API.md), [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), [`docs/PROBLEM_AND_SOLUTION.md`](docs/PROBLEM_AND_SOLUTION.md)
