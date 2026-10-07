@@ -22,9 +22,27 @@
 | Database | ✅ **Shared Aiven Postgres**, migrated + seeded (10 users). Both of us use it (see **Note for Suleman**) |
 | AI models | `openai/gpt-oss-120b` primary, `openai/gpt-oss-20b` fallback (Llama 3.3 is no longer on our Groq account) |
 | Groq API key in `.env` | ✅ Added |
-| README, deployment, demo video | ⬜ Not started |
+| README, deployment, demo video | ✅ Deployed: https://infinity-hackathon.vercel.app (live-tested) · 🟡 README final pass (Suleman) · ⬜ demo video |
 
 **Legend:** `[x]` done · `[~]` written but not run/tested · `[ ]` to do
+
+---
+
+## 💬 Message #2 from Ali to Suleman: README final pass
+
+Hi Suleman, the app is **live and tested**: https://infinity-hackathon.vercel.app (all 10 logins, transcript 12/12, changed-input test in ~22 s, every role's access + `403`s). I already added the live URL, deployment status, deployed commit and a "Verified on the live site" list to the README, and removed the Member 3/4 rows. Your team member detail page is merged too. Nice addition.
+
+**Please update `README.md` so it matches `README_Template (1).md` exactly:**
+- [ ] **Team name: `Dual Byte`** (line `- Team name: [team name]`)
+- [ ] **Title** in the template's format: `# NovaWorks AI Project Manager - AI Meeting to Project CRM`
+- [ ] **Team**: the template says "four members". Write **"Two members"** and keep our two names + responsibilities (add your team member detail page to your line)
+- [ ] **What Works**: add the **team member detail page** (each person's work, filtered by the viewer's access)
+- [ ] **How Judges Can Test, step 10**: judges on the **live site can't run `npm run db:reset`**. Reword: on the live site, creating from the modified transcript adds a new set of 3 projects next to the existing ones; open the new QuickServe and check *Mobile integration and testing* is 12 h / 23 Oct (48 h total). `db:reset` is for local runs only.
+- [ ] **Demo video**: replace `[video URL]` in **Links** and **Submission Summary** once we record it (or write "Live demo at the link above" if we skip the video)
+- [ ] Check no `[ ... ]` placeholders are left: `grep -n "\[" README.md`
+- [ ] Commit + push to `main`
+
+**Before judging (together):** agree, then `npm run db:reset` so judges see the transcript create the projects live. The live DB currently has 3 projects.
 
 ---
 
@@ -224,10 +242,10 @@ TranscriptResultDTO { runId, model, projects: ProjectDTO[], taskCount }
 - [x] Removed demo accounts list from the login page
 - [x] **Clients (CRM)**: `Client` table + migration (applied on Aiven), API, `/clients` + `/clients/[id]` pages, edit form, tested per role
 - [x] Fix Aiven connection limit locally (`&connection_limit=3`)
-- [ ] Vercel: import the GitHub repo, set env vars (`DATABASE_URL` with `&connection_limit=1`, `GROQ_API_KEY`, `GROQ_MODEL`, `GROQ_FALLBACK_MODEL`, `SESSION_SECRET`), deploy `main`
-- [ ] Check the transcript route finishes within Vercel's time limit (`maxDuration = 60`); if it times out, switch the primary model to the faster fallback
-- [ ] Live test: login as each role, run the supplied transcript, then the changed-input test (QuickServe integration 12 h, 23 Oct)
-- [ ] Send Suleman the live URL for the README
+- [x] Vercel: import the GitHub repo, set env vars (`DATABASE_URL` with `&connection_limit=1`, `GROQ_API_KEY`, `GROQ_MODEL`, `GROQ_FALLBACK_MODEL`, `SESSION_SECRET`), deploy `main`
+- [x] Check the transcript route finishes within Vercel's time limit (`maxDuration = 60`); if it times out, switch the primary model to the faster fallback
+- [x] Live test: login as each role, run the supplied transcript, then the changed-input test (QuickServe integration 12 h, 23 Oct)
+- [x] Send Suleman the live URL for the README (added to README by Ali)
 - [x] `npm run db:reset` after Suleman's OK (DB is empty: 10 users, 0 projects)
 - [x] Suleman's Clients review: 4 fixes (agent label, stat layout, notes hidden from agents in the API, date format)
 - [ ] Before judging: run `npm run db:reset` once more if anyone created test projects
