@@ -17,7 +17,7 @@
 | AI transcript conversion | ✅ **Tested with Groq: 12/12 tasks match the answer key**, changed-input test passes, rate-limit retry + fallback works |
 | Shared API types (`src/types/index.ts`) | ✅ Done |
 | Root layout + global styles | ✅ Done |
-| Frontend pages + components | ✅ All 6 pages built on `frontend` branch (login, dashboard, project detail, transcript, my tasks, team); end-to-end role test pending |
+| Frontend pages + components | ✅ All 6 pages built on `frontend` branch (login, dashboard, project detail, transcript, my tasks, team); end-to-end role test passed, merged to `main` |
 | Database | ✅ **Shared Aiven Postgres**, migrated + seeded (10 users). Both of us use it (see **Note for Suleman**) |
 | AI models | `openai/gpt-oss-120b` primary, `openai/gpt-oss-20b` fallback (Llama 3.3 is no longer on our Groq account) |
 | Groq API key in `.env` | ✅ Added |
@@ -196,11 +196,13 @@ TranscriptResultDTO { runId, model, projects: ProjectDTO[], taskCount }
 ### Phase 4 · Integration Testing
 - [x] `tsc --noEmit` and `eslint src` pass
 - [x] Page access per role: logged out → `/login`; manager blocked from `/transcript`; agent sent to `/my-tasks`; admin blocked from `/my-tasks`
-- [ ] Run supplied transcript from the UI (adds 3 projects to the shared DB, tell Ali first)
-- [ ] Test as Admin, Ayesha (only UrbanCart), Ali (3 tasks), Hamza (2 tasks across 2 projects)
-- [ ] Refresh check: data persists
-- [ ] Logout works; visiting a page after logout → login
-- [ ] Merge `frontend` → `main`
+- [x] Run supplied transcript (same request as the UI button): `201` in ~12 s, 3 projects / 12 tasks, hours 40 / 46 / 38, **12/12 tasks match the answer key**
+- [x] Test as Admin, Ayesha (only UrbanCart), Ali (3 tasks, only his own visible), Hamza (2 tasks across UrbanCart + QuickServe); other projects → `403`; non-admins → `403` on `/api/transcript`
+- [x] Refresh check: data persists (new session sees the same projects/tasks)
+- [x] Logout works; visiting a page after logout → `/login`
+- [x] Merge `frontend` → `main`
+- [ ] ⚠️ Shared DB has **6 projects**: we both ran the transcript at the same time. Agree, then `npm run db:reset`
+- [ ] ⚠️ Aiven hit **"too many database connections"** during testing (free plan limit). Before deploying, add `&connection_limit=1` to `DATABASE_URL` on Vercel (or enable Aiven connection pooling) and stop dev servers you aren't using
 
 ### Phase 5 · Submission
 - [ ] Fill `README.md` from template (commands, env vars, accounts, test steps, links, limitations)
@@ -213,8 +215,8 @@ TranscriptResultDTO { runId, model, projects: ProjectDTO[], taskCount }
 
 | Step | Task |
 |---|---|
-| Now | Ali: backend done and tested · Suleman: frontend pages done on `frontend` branch, end-to-end test next |
-| After test | Merge `frontend` → `main`, then README |
+| Now | Frontend tested end-to-end and merged to `main` · Ali: review, fix DB connection limit, deploy · Suleman: README |
+| After merge | `db:reset` (agreed), README, Vercel deploy |
 | Deploy | Vercel project + env vars (Aiven already migrated + seeded), `db:reset` before demo, test live |
 | Final | Record demo video, rehearse demo, final push |
 
