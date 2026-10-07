@@ -36,8 +36,8 @@ Enforced in the database queries for every request, not just hidden in the UI.
 
 | Role | Projects | Tasks | Clients | Transcript |
 |---|---|---|---|---|
-| **ADMIN** | All | All | All · edit + rename | ✅ |
-| **MANAGER** | Projects they manage | All tasks in their projects | Clients of their projects · edit (no rename) | ❌ 403 |
+| **ADMIN** | All · edit | All · add / edit / delete | All · edit + rename | ✅ |
+| **MANAGER** | Projects they manage · edit (no reassign) | All tasks in their projects · add / edit / delete | Clients of their projects · edit (no rename) | ❌ 403 |
 | **AGENT** | Projects containing their tasks | **Only their own** | Clients of those projects · read-only, `notes` hidden | ❌ 403 |
 
 ## 3. Errors
@@ -69,7 +69,11 @@ Every error uses one shape:
 | `GET` | `/api/users` | Logged in | Team directory |
 | `GET` | `/api/users/{id}` | Logged in | Team member profile + work (filtered by viewer) |
 | `GET` | `/api/projects` | Logged in | Projects visible to the user |
-| `GET` | `/api/projects/{id}` | Logged in | Project detail + tasks |
+| `GET` | `/api/projects/{id}` | Logged in | Project detail + tasks (+ `canEdit`) |
+| `PATCH` | `/api/projects/{id}` | Admin / project's manager | Correct project name, description, deadline (manager: admin only) |
+| `POST` | `/api/projects/{id}/tasks` | Admin / project's manager | Add a task the AI missed |
+| `PATCH` | `/api/tasks/{id}` | Admin / project's manager | Correct a task |
+| `DELETE` | `/api/tasks/{id}` | Admin / project's manager | Delete a task the AI should not have created |
 | `GET` | `/api/tasks/mine` | Agent | The agent's own tasks |
 | `GET` | `/api/clients` | Logged in | Clients visible to the user |
 | `GET` | `/api/clients/{id}` | Logged in | Client detail + visible projects |
@@ -135,6 +139,41 @@ For agents, `taskCount` and `totalHours` count only their own tasks.
 ] }
 ```
 Agents receive only their own tasks. `403` if the project is outside the user's access, `404` if it doesn't exist.
+
+### Correcting AI results (projects and tasks)
+
+If the AI extracts something wrongly, the **admin** or the **manager of that project** can fix it. Agents get `403`. Every endpoint below returns the updated `ProjectDetail`, so the UI just swaps it in. The same rules as the AI conversion apply:
+- The task owner must be an **AGENT**; a new manager must be a **MANAGER** (admin only).
+- Hours must be more than 0, dates must be valid `YYYY-MM-DD`, and **task deadline ≤ project deadline**.
+- A project deadline can't move before its latest task deadline.
+- Unknown fields are rejected.
+
+#### `PATCH /api/projects/{id}`
+```json
+// request (any subset)
+{ "name": "UrbanCart Website", "description": "Updated scope", "deadline": "2026-10-21", "managerId": "PM02" }
+// 400
+{ "error": "Please fix the following and save again.",
+  "issues": ["Project deadline 2026-10-15 is before a task deadline (2026-10-19). Move the task first."] }
+```
+`403` for agents, other managers, or a manager trying to change `managerId`.
+
+#### `POST /api/projects/{id}/tasks` → `201`
+```json
+{ "title": "Accessibility review", "description": "Check contrast and keyboard navigation",
+  "assigneeId": "DEV01", "deadline": "2026-10-18", "estimatedHours": 3 }
+```
+
+#### `PATCH /api/tasks/{id}`
+Any subset of the task fields above. Example: `{ "estimatedHours": 12, "deadline": "2026-10-23" }`.
+```json
+// 400
+{ "error": "Please fix the following and save again.",
+  "issues": ["Task deadline 2026-10-25 is after the project deadline 2026-10-20."] }
+```
+
+#### `DELETE /api/tasks/{id}`
+Removes the task and returns the updated project. `404` if it was already deleted.
 
 ### Tasks
 
@@ -218,7 +257,9 @@ type CurrentUser = { id; name; email; role: Role };
 type UserDTO = { id; name; email; role; specialization; skills: string[] };
 type ProjectDTO = { id; name; clientName; clientId: string | null; description; deadline; manager: PersonRef; taskCount; totalHours };
 type TaskDTO = { id; projectId; title; description; deadline; estimatedHours; assignee: PersonRef };
-type ProjectDetailDTO = ProjectDTO & { tasks: TaskDTO[] };
+type ProjectDetailDTO = ProjectDTO & { tasks: TaskDTO[]; canEdit: boolean };
+type TaskInput = { title; description; assigneeId; deadline; estimatedHours };          // POST / PATCH (subset) tasks
+type ProjectUpdateInput = Partial<{ name; description; deadline; managerId }>;          // PATCH project
 type MyTaskDTO = TaskDTO & { project: { id; name; clientName; manager: PersonRef } };
 type TeamMemberDTO = { user: UserDTO; projects: ProjectDTO[]; tasks: MyTaskDTO[]; limited: boolean };
 type ClientDTO = { id; name; industry; contactName; contactEmail; contactPhone; website; notes;

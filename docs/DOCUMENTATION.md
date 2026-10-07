@@ -74,10 +74,12 @@ Ten fictional demo accounts, all with password **`Demo123!`**. There is no signu
 4. Click **Create from Transcript**. The button is disabled while the AI works (10–25 s).
 5. **Success:** you see each created project with its manager, deadline, task count and hours, with links to open them.
    **Problem:** you see a list of what couldn't be resolved, for example *"project manager could not be identified"*. Nothing is saved. Fix the transcript and try again.
-6. Use **Clients** to add contact details and notes for each client, and **Team Directory** to see everyone's work.
+6. If the AI got something wrong, open the project: **Edit project** (name, deadline, description, manager), **Edit** on any task (title, description, owner, deadline, hours, or **Delete task**), or **Add task** for anything it missed. The same rules as the AI conversion are checked before saving.
+7. Use **Clients** to add contact details and notes for each client, and **Team Directory** to see everyone's work.
 
 ### Manager (e.g. Ayesha)
 - **My Projects** shows only the projects you manage. Open one to see all of its tasks.
+- You can correct your own projects: **Edit project** (name, deadline, description, not the manager), **Edit** / **Delete** any task, and **Add task**.
 - **Clients** shows the clients of your projects. You can **Edit details** (contact, industry, notes) but not rename.
 - **Team Directory** shows everyone's profile. Opening a person shows only their work in your projects.
 
@@ -96,7 +98,7 @@ Ten fictional demo accounts, all with password **`Demo123!`**. There is no signu
 | `/login` | Everyone | Email + password sign-in |
 | `/` | Admin, Manager | Admin: **Dashboard** (all projects + totals + Create button). Manager: **My Projects**. Agents are redirected to `/my-tasks`. |
 | `/transcript` | Admin | Transcript box, sample loader, progress, success summary or issues list, and the team directory sent to the AI |
-| `/projects/[id]` | Anyone with access | Client (links to client page), manager, deadline, description, task table (title, description, assignee, deadline, hours) |
+| `/projects/[id]` | Anyone with access | Client (links to client page), manager, deadline, description, task table (title, description, assignee, deadline, hours). Admin and the project's manager also get **Edit project**, **Add task** and **Edit** per task (with delete) |
 | `/my-tasks` | Agent | The agent's tasks grouped by project |
 | `/team` | Everyone | Read-only directory: names, roles, specializations, skills, with role filters |
 | `/team/[id]` | Everyone | A person's profile plus their projects/tasks, **limited to what the viewer may see** |
@@ -167,6 +169,7 @@ The current user always comes from the **signed session cookie**, never from the
 | `taskFilterFor` (one project) | all tasks | all tasks | `assigneeId = me` |
 | `taskVisibilityFor` (team member page) | all | tasks in my projects | my tasks |
 | `clientFilterFor` | all | clients of my projects | clients of projects with my tasks |
+| `canEditProject` (project + its tasks) | ✅ (+ change manager) | ✅ if I manage it | ❌ |
 | `canEditClient` | ✅ (+ rename) | ✅ if I manage one of its projects | ❌ |
 | Transcript | ✅ | ❌ | ❌ |
 
@@ -355,6 +358,9 @@ Steps:
 | Role visibility | Admin, Ayesha, Bilal, Hina, Ali, Hamza | Each sees exactly their projects / tasks |
 | Direct access | Other projects / clients by ID | `403` · unknown ID `404` |
 | Client edits | Agent / other manager / manager rename / bad email / unknown field | `403` / `403` / `403` / `400` / `400` |
+| Project / task corrections | Agent / other manager / manager reassigning a project | `403` / `403` / `403` |
+| Correction rules | Owner is a manager / hours 0 / task after project deadline / invalid date / unknown field / project deadline before a task | all `400` with a specific issue |
+| Corrections saved | Fix a task, add a task, edit project, admin changes manager, delete a task | `200` / `201`; totals update; agent's My Tasks reflects the change |
 | Notes privacy | Agent fetches client | `notes: ""` |
 | Persistence | Refresh, new session | Data remains |
 | Build | `npm run typecheck && npm run lint && npm run build` | Pass |
@@ -390,13 +396,13 @@ Steps:
 ## 15. Limitations and future work
 
 **Current limitations**
-- Projects and tasks are read-only after creation (editing was optional in the brief); client details are editable.
+- Corrections happen after saving: the admin or the project's manager edits, adds or deletes tasks and fixes project details (there is no draft review step before the first save).
 - Running the same transcript twice creates the projects twice (clients are reused).
 - Free tiers: Groq rate limits (about 1 transcript per minute on the primary model) and Aiven connection limits.
 - No signup, password reset, user management, cost tracking or progress tracking (out of scope by design).
 
 **Next steps**
-- Review and edit the AI draft before saving; edit tasks afterwards.
+- Review the AI draft before the first save (corrections after saving already work).
 - Task status (to do / in progress / done) and deadline reminders.
 - Duplicate-meeting detection.
 - Audio upload → speech-to-text → same pipeline.

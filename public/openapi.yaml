@@ -13,8 +13,8 @@ info:
     **Access rules (enforced on the server for every request):**
     | Role | Projects | Tasks | Clients |
     | --- | --- | --- | --- |
-    | ADMIN | all | all | all (can edit + rename) |
-    | MANAGER | projects they manage | all tasks in their projects | clients of their projects (can edit, not rename) |
+    | ADMIN | all (can edit) | all (can add / edit / delete) | all (can edit + rename) |
+    | MANAGER | projects they manage (can edit, not reassign) | all tasks in their projects (can add / edit / delete) | clients of their projects (can edit, not rename) |
     | AGENT | projects containing their tasks | **only their own tasks** | clients of those projects (read-only, notes hidden) |
 
     Only the ADMIN can create projects from a transcript.
@@ -167,6 +167,100 @@ paths:
       responses:
         "200":
           description: Project with tasks
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProjectDetail" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      tags: [Projects]
+      summary: Correct a project (fix AI extraction)
+      description: |
+        ADMIN, or the MANAGER of this project. Only the ADMIN may change `managerId` (must be a MANAGER).
+        The deadline may not move before the latest task deadline. All fields optional; unknown fields rejected.
+      parameters:
+        - $ref: "#/components/parameters/ProjectId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProjectUpdate" }
+            example: { deadline: "2026-10-21", description: "Updated scope" }
+      responses:
+        "200":
+          description: Updated project
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProjectDetail" }
+        "400": { $ref: "#/components/responses/EditInvalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/projects/{id}/tasks:
+    post:
+      tags: [Projects]
+      summary: Add a task the AI missed
+      description: |
+        Allowed for the ADMIN, or the MANAGER of this project (agents: `403`). Same rules as the
+        AI conversion: owner must be an AGENT, hours > 0, valid date, task deadline ≤ project deadline.
+        Returns the updated project.
+      parameters:
+        - $ref: "#/components/parameters/ProjectId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TaskInput" }
+            example: { title: Accessibility review, description: Check contrast and keyboard navigation, assigneeId: DEV01, deadline: "2026-10-18", estimatedHours: 3 }
+      responses:
+        "201":
+          description: Task added; updated project returned
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProjectDetail" }
+        "400": { $ref: "#/components/responses/EditInvalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/tasks/{id}:
+    patch:
+      tags: [Tasks]
+      summary: Correct a task (fix AI extraction)
+      description: |
+        Allowed for the ADMIN, or the MANAGER of this project (agents: `403`). Same rules as the
+        AI conversion: owner must be an AGENT, hours > 0, valid date, task deadline ≤ project deadline.
+        Returns the updated project.
+        All fields optional.
+      parameters:
+        - $ref: "#/components/parameters/TaskId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TaskUpdate" }
+            example: { estimatedHours: 12, deadline: "2026-10-23" }
+      responses:
+        "200":
+          description: Updated project
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProjectDetail" }
+        "400": { $ref: "#/components/responses/EditInvalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      tags: [Tasks]
+      summary: Delete a task the AI should not have created
+      description: ADMIN, or the MANAGER of the task's project. Returns the updated project.
+      parameters:
+        - $ref: "#/components/parameters/TaskId"
+      responses:
+        "200":
+          description: Task deleted; updated project returned
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ProjectDetail" }
@@ -328,6 +422,11 @@ components:
       in: path
       required: true
       schema: { type: string, example: cmuxrxk44000ruys46lqeb038 }
+    TaskId:
+      name: id
+      in: path
+      required: true
+      schema: { type: string }
     ClientId:
       name: id
       in: path
@@ -340,6 +439,14 @@ components:
       content:
         application/json:
           schema: { $ref: "#/components/schemas/Error" }
+    EditInvalid:
+      description: Validation failed; nothing changed
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example:
+            error: Please fix the following and save again.
+            issues: ["Task deadline 2026-10-25 is after the project deadline 2026-10-20."]
     Unauthorized:
       description: Not logged in or session expired
       content:
@@ -416,6 +523,35 @@ components:
         - type: object
           properties:
             tasks: { type: array, items: { $ref: "#/components/schemas/Task" } }
+            canEdit: { type: boolean, description: True for the admin and this project's manager (may correct the project and its tasks) }
+    TaskInput:
+      type: object
+      additionalProperties: false
+      required: [title, description, assigneeId, deadline, estimatedHours]
+      properties:
+        title: { type: string, maxLength: 200 }
+        description: { type: string, maxLength: 2000 }
+        assigneeId: { type: string, description: Must be an AGENT, example: DEV01 }
+        deadline: { $ref: "#/components/schemas/Date" }
+        estimatedHours: { type: number, exclusiveMinimum: true, minimum: 0, maximum: 1000 }
+    TaskUpdate:
+      type: object
+      additionalProperties: false
+      description: Any subset of TaskInput
+      properties:
+        title: { type: string, maxLength: 200 }
+        description: { type: string, maxLength: 2000 }
+        assigneeId: { type: string, description: Must be an AGENT }
+        deadline: { $ref: "#/components/schemas/Date" }
+        estimatedHours: { type: number, exclusiveMinimum: true, minimum: 0, maximum: 1000 }
+    ProjectUpdate:
+      type: object
+      additionalProperties: false
+      properties:
+        name: { type: string, maxLength: 200 }
+        description: { type: string, maxLength: 2000 }
+        deadline: { $ref: "#/components/schemas/Date" }
+        managerId: { type: string, description: ADMIN only; must be a MANAGER }
     MyTask:
       allOf:
         - $ref: "#/components/schemas/Task"

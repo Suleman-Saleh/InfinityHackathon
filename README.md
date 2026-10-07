@@ -26,6 +26,7 @@ Built for **The Infinity Hack '26**.
 - **Screens**: login, dashboard with project cards and totals, project detail with task table, Create from Transcript, My Tasks (agents), Team Directory (read-only) with a detail page per person, Clients.
 - **Team member detail**: click anyone in the Team Directory to see what they are working on (an agent's tasks, or the projects a manager runs), with tasks, hours and next deadline. It only shows work the viewer is already allowed to see: the admin can open everyone; a manager can open their own profile and the agents working on their projects (seeing only the tasks in those projects); an agent can only open their own profile. Other cards are not clickable, and the API returns `403`.
 - **Clients (CRM)**: client list with search, and a client detail page with contact person, email, phone, website, notes and the client's projects. Clients are created automatically from the transcript (matched by name, so re-running never duplicates them). The admin and the client's project manager can edit details; only the admin can rename.
+- **Correct AI mistakes**: if the AI extracts something wrongly, the admin or the project's manager can **edit any task** (title, description, owner, deadline, hours), **delete** a task that shouldn't exist, **add** a task it missed, and **edit the project** (name, deadline, description; changing the manager is admin-only). The server applies the same rules as the AI conversion (owner must be an agent, hours > 0, task deadline ≤ project deadline). Agents can't edit.
 - **Saved records**: everything is stored in PostgreSQL and remains after a refresh.
 - **API documentation**: interactive Swagger UI at [`/api-docs`](https://infinity-hackathon.vercel.app/api-docs) generated from an OpenAPI 3 spec ([`public/openapi.yaml`](public/openapi.yaml)); log in with "Try it out" and call any endpoint.
 
@@ -129,6 +130,7 @@ The password is **`Demo123!`** for every account (case-sensitive: capital **D**,
 7. Log in as **Hamza**: his two API tasks span UrbanCart and QuickServe.
 8. Check direct access: as admin, copy a QuickServe project URL; as Ali, open it. You'll see *"You don't have access to this project"*. The API returns `403` for the same request.
 9. Refresh any page: the data is still there.
+   - Optional (correcting the AI): as admin or Ayesha, open UrbanCart → **Edit** on a task → change the hours or owner → **Save changes**; try a deadline after 20 Oct to see the validation message. **Add task** and **Delete task** work the same way. Log in as Ali to see his My Tasks update.
 10. Changed input: load the transcript, change Usman's final QuickServe integration estimate to **12 hours, 23 October**, and create again. On the live site this adds a **new set of 3 projects** next to the existing ones (there is no reset button for judges). Open the new **QuickServe Mobile App** and check *Mobile integration and testing* is **12 hours, due 23 October** (QuickServe total **48 hours**); every other task is unchanged.
 
 11. Optional: open [`/api-docs`](https://infinity-hackathon.vercel.app/api-docs), log in with *Try it out* on `POST /api/auth/login` (e.g. as Ali), then call `GET /api/projects/{id}` with a QuickServe project id to see the `403` directly.
@@ -160,7 +162,7 @@ The password is **`Demo123!`** for every account (case-sensitive: capital **D**,
 - **Processing time**: creating from a transcript takes about 10–25 seconds (about 22 s on the live site).
 - **Database connections**: Aiven's free plan allows few connections, so the app keeps its connection pool small (`connection_limit`).
 - **Duplicates**: running the same transcript twice creates the projects twice (clients are reused). Use `npm run db:reset` between local demo runs; the team resets the live database before judging.
-- **No editing of projects or tasks**: created projects and tasks are read-only (editing was optional in the brief). Client details can be edited.
+- **Corrections happen after saving**: AI results are saved first, then the admin or the project's manager can edit, add or delete tasks and fix project details. There is no separate draft-review step before the first save.
 - Out of scope by design: signup, password reset, user management, cost calculation, progress tracking and charts.
 
 ## Submission Summary
@@ -168,5 +170,5 @@ The password is **`Demo123!`** for every account (case-sensitive: capital **D**,
 - Live link: https://infinity-hackathon.vercel.app · Demo video: live demo at the link above
 - Setup and seed commands: documented above
 - Demo login accounts: confirmed working
-- Features completed: seeded login, role-based access, AI transcript → projects and tasks with validation and all-or-nothing save, project/task screens, My Tasks, Team Directory with team member detail, Clients (CRM), Swagger API docs
+- Features completed: seeded login, role-based access, AI transcript → projects and tasks with validation and all-or-nothing save, project/task screens, editing / adding / deleting tasks and projects to correct the AI, My Tasks, Team Directory with team member detail, Clients (CRM), Swagger API docs
 - Documentation: [`docs/DOCUMENTATION.md`](docs/DOCUMENTATION.md), [`docs/API.md`](docs/API.md), [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), [`docs/PROBLEM_AND_SOLUTION.md`](docs/PROBLEM_AND_SOLUTION.md)

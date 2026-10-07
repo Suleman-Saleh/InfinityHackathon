@@ -1,9 +1,18 @@
 import { formatDate } from "@/lib/dates";
 import type { TaskDTO } from "@/types";
+import { PencilIcon } from "./icons";
 import { Avatar, Card } from "./ui";
 
-/** Task rows: title, description, assigned agent, deadline and estimated hours. */
-export function TaskTable({ tasks, specializations = {} }: { tasks: TaskDTO[]; specializations?: Record<string, string> }) {
+/** Task rows: title, description, assigned agent, deadline and estimated hours. `onEdit` adds an Edit button per row. */
+export function TaskTable({
+  tasks,
+  specializations = {},
+  onEdit,
+}: {
+  tasks: TaskDTO[];
+  specializations?: Record<string, string>;
+  onEdit?: (task: TaskDTO) => void;
+}) {
   const sorted = [...tasks].sort((a, b) => a.deadline.localeCompare(b.deadline));
 
   return (
@@ -16,6 +25,7 @@ export function TaskTable({ tasks, specializations = {} }: { tasks: TaskDTO[]; s
             <th className="px-5 py-3 font-medium">Assigned agent</th>
             <th className="px-5 py-3 font-medium">Deadline</th>
             <th className="px-5 py-3 text-right font-medium">Est. hours</th>
+            {onEdit && <th className="px-5 py-3"><span className="sr-only">Actions</span></th>}
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
@@ -38,6 +48,18 @@ export function TaskTable({ tasks, specializations = {} }: { tasks: TaskDTO[]; s
               </td>
               <td className="whitespace-nowrap px-5 py-4 text-slate-700">{formatDate(t.deadline)}</td>
               <td className="px-5 py-4 text-right font-medium text-slate-900">{t.estimatedHours}</td>
+              {onEdit && (
+                <td className="px-5 py-3 text-right">
+                  <button
+                    type="button"
+                    onClick={() => onEdit(t)}
+                    className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-brand-600 hover:bg-brand-50"
+                    aria-label={`Edit ${t.title}`}
+                  >
+                    <PencilIcon className="h-3.5 w-3.5" /> Edit
+                  </button>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
@@ -56,6 +78,11 @@ export function TaskTable({ tasks, specializations = {} }: { tasks: TaskDTO[]; s
               </span>
               <span>{formatDate(t.deadline)}</span>
               <span className="font-medium">{t.estimatedHours} hrs</span>
+              {onEdit && (
+                <button type="button" onClick={() => onEdit(t)} className="ml-auto inline-flex items-center gap-1.5 text-sm font-medium text-brand-600" aria-label={`Edit ${t.title}`}>
+                  <PencilIcon className="h-3.5 w-3.5" /> Edit
+                </button>
+              )}
             </div>
           </li>
         ))}

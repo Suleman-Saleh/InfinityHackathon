@@ -37,7 +37,16 @@ export type TaskDTO = {
   assignee: PersonRef;
 };
 
-export type ProjectDetailDTO = ProjectDTO & { tasks: TaskDTO[] };
+export type ProjectDetailDTO = ProjectDTO & {
+  tasks: TaskDTO[];
+  canEdit: boolean; // admin, or the manager of this project: may fix what the AI extracted
+};
+
+/** Body for creating a task (all fields) or updating one (any subset). */
+export type TaskInput = { title: string; description: string; assigneeId: string; deadline: string; estimatedHours: number };
+
+/** Body for correcting a project. `managerId` may only be changed by the admin. */
+export type ProjectUpdateInput = Partial<{ name: string; description: string; deadline: string; managerId: string }>;
 
 export type MyTaskDTO = TaskDTO & { project: { id: string; name: string; clientName: string; manager: PersonRef } };
 

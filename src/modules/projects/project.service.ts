@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { toDateString } from "@/lib/format";
 import { taskService } from "@/modules/tasks/task.service";
 import type { CurrentUser, ProjectDTO, ProjectDetailDTO } from "@/types";
-import { projectFilterFor } from "./project.policy";
+import { canEditProject, projectFilterFor } from "./project.policy";
 import { projectRepo, type ProjectRow } from "./project.repo";
 
 export function toProjectDTO(p: ProjectRow): ProjectDTO {
@@ -55,6 +55,7 @@ export const projectService = {
       taskCount: tasks.length,
       totalHours: tasks.reduce((sum, t) => sum + t.estimatedHours, 0),
       tasks,
+      canEdit: canEditProject(user, visible.managerId),
     };
   },
 };
