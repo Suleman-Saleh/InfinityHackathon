@@ -236,6 +236,6 @@ The structure above does not need to change for any of these steps. Each one add
 | ORM | Prisma | Typed queries, migrations, transactions |
 | Validation | zod | One schema library for API input, AI output and env vars |
 | Auth | JWT in httpOnly cookie (`jose`) + bcrypt | Stateless, so the app scales horizontally |
-| AI | Groq (Llama 3.3 70B) behind `AIProvider` | Fast, free tier, JSON mode, swappable |
+| AI | Groq `openai/gpt-oss-120b` (fallback `openai/gpt-oss-20b`) behind `AIProvider` | Fast, free tier, JSON mode, swappable; both score 12/12 on the supplied transcript |
 | UI | Tailwind CSS (+ shadcn/ui optional) | Fast to build a clean UI |
 | Hosting | Vercel | Zero-config Next.js, auto-scaling |

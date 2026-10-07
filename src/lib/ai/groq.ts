@@ -1,4 +1,4 @@
-import type { AIProvider, ChatMessage } from "./provider";
+import { RateLimitError, type AIProvider, type ChatMessage } from "./provider";
 
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 
@@ -25,7 +25,9 @@ export class GroqProvider implements AIProvider {
 
     if (!res.ok) {
       const body = await res.text().catch(() => "");
-      throw new Error(`Groq ${model} returned ${res.status}: ${body.slice(0, 300)}`);
+      const message = `Groq ${model} returned ${res.status}: ${body.slice(0, 300)}`;
+      if (res.status === 429) throw new RateLimitError(message, retryAfterMs(res, body));
+      throw new Error(message);
     }
 
     const data = await res.json();
@@ -34,6 +36,15 @@ export class GroqProvider implements AIProvider {
 
     return parseJSON(content);
   }
+}
+
+// Groq sends a retry-after header and/or "Please try again in 1.395s" in the body.
+function retryAfterMs(res: Response, body: string): number | null {
+  const header = Number(res.headers.get("retry-after"));
+  if (Number.isFinite(header) && header > 0) return header * 1000;
+  const match = body.match(/try again in ([\d.]+)(ms|s)/i);
+  if (!match) return null;
+  return Number(match[1]) * (match[2].toLowerCase() === "ms" ? 1 : 1000);
 }
 
 // Models sometimes wrap JSON in ``` fences or add text around it.

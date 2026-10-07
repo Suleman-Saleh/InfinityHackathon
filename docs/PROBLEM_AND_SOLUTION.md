@@ -76,7 +76,7 @@ Login  →  Paste meeting transcript  →  AI extracts projects & tasks  →  Va
 |---|---|
 | Frontend + backend | Next.js (React + API routes) |
 | Database | PostgreSQL (Aiven, hosted) via Prisma ORM |
-| AI | Groq API (Llama 3.3 70B, JSON mode, with a backup Groq model) |
+| AI | Groq API: GPT-OSS 120B with JSON mode, GPT-OSS 20B as automatic fallback |
 | Auth | Session cookie / JWT. Passwords hashed with bcrypt |
 | Deployment | Vercel + Aiven Postgres |
 

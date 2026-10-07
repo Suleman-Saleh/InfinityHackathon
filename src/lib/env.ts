@@ -3,7 +3,7 @@ import { z } from "zod";
 const schema = z.object({
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
   GROQ_API_KEY: z.string().min(1, "GROQ_API_KEY is required"),
-  GROQ_MODEL: z.string().default("llama-3.3-70b-versatile"),
+  GROQ_MODEL: z.string().default("openai/gpt-oss-120b"),
   GROQ_FALLBACK_MODEL: z.string().optional(),
   SESSION_SECRET: z.string().min(16, "SESSION_SECRET must be at least 16 characters"),
 });

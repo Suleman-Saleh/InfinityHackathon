@@ -11,14 +11,16 @@
 | Area | Status |
 |---|---|
 | Project setup (Next.js, Tailwind, `.gitignore`, `.env.example`) | ✅ Done |
-| Dependencies install | ⏳ In progress (slow network) |
+| Dependencies install | ✅ Done (Prisma pinned to 6.19.3) |
 | Database schema, seed, reset scripts | ✅ Written · ⬜ not run yet (no database) |
-| Auth, role-based API, AI transcript conversion | ✅ Written · ⬜ not compiled / tested yet |
+| Auth, role-based API | ✅ Written + type-checks · ⬜ not run against a database yet |
+| AI transcript conversion | ✅ **Tested with Groq: 12/12 tasks match the answer key**, changed-input test passes, rate-limit retry + fallback works |
 | Shared API types (`src/types/index.ts`) | ✅ Done |
 | Root layout + global styles | ✅ Done |
 | Frontend pages + components | ⬜ Not started |
-| Aiven database + `DATABASE_URL` | ⬜ Not created |
-| Groq API key in `.env` | ⬜ Not added |
+| Aiven database + `DATABASE_URL` | ⬜ Not created (blocks migrate, seed, API testing) |
+| AI models | `openai/gpt-oss-120b` primary, `openai/gpt-oss-20b` fallback (Llama 3.3 is no longer on our Groq account) |
+| Groq API key in `.env` | ✅ Added |
 | README, deployment, demo video | ⬜ Not started |
 
 **Legend:** `[x]` done · `[~]` written but not run/tested · `[ ]` to do
@@ -76,12 +78,12 @@ TranscriptResultDTO { runId, model, projects: ProjectDTO[], taskCount }
 ### Phase 1 · Setup
 - [x] Next.js 16 project (TypeScript, Tailwind, App Router, `src/`)
 - [x] `.gitignore` (keeps `.env` out of git) and `.env.example`
-- [~] Install `@prisma/client@6`, `prisma@6`, `bcryptjs`, `jose`, `zod`, `tsx`, still running
+- [x] Install `@prisma/client@6.19.3`, `prisma@6.19.3`, `bcryptjs`, `jose`, `zod`, `tsx`
 - [ ] Create Aiven Postgres, put `DATABASE_URL` in `.env`
-- [ ] Add Groq key to `.env` (`GROQ_API_KEY`) and a random `SESSION_SECRET`
+- [x] Add Groq key to `.env` (`GROQ_API_KEY`) and a random `SESSION_SECRET`
 - [x] Prisma schema: `User`, `Project`, `Task`, `TranscriptRun` (+ `Role`, `RunStatus` enums, indexes)
 - [ ] `npx prisma migrate dev --name init`
-- [ ] Add npm scripts: `db:seed`, `db:reset`, `prisma.seed` config
+- [x] Add npm scripts: `db:migrate`, `db:deploy`, `db:seed`, `db:reset`, `typecheck`, `ai:test`
 - [ ] **Checkpoint:** commit + push so Suleman can pull
 
 ### Phase 2 · Seed + Auth
@@ -99,19 +101,20 @@ TranscriptResultDTO { runId, model, projects: ProjectDTO[], taskCount }
 - [ ] **Checkpoint:** merge → `main`, tell Suleman the API is live
 
 ### Phase 4 · AI Transcript
-- [~] `src/lib/ai/`: `AIProvider` interface, Groq implementation, automatic fallback model
-- [~] `transcript.prompt.ts`: final decisions only, ignore rejected features, directory IDs only, never invent people
-- [~] `transcript.schema.ts` (zod) + `transcript.validate.ts`: readable issues for missing manager/assignee, wrong role, bad dates, hours ≤ 0, task after project deadline
+- [x] `src/lib/ai/`: `AIProvider` interface, Groq implementation, retries on rate limit (waits as told), fallback model, retry on malformed output
+- [x] `transcript.prompt.ts`: final decisions only, ignore rejected features, directory IDs only, never invent people
+- [x] `transcript.schema.ts` (zod) + `transcript.validate.ts`: readable issues for missing manager/assignee, wrong role, bad dates, hours ≤ 0, task after project deadline
 - [~] `transcript.service.ts`: admin-only, empty / too-long check, one `prisma.$transaction`, logs every run to `TranscriptRun`
 - [~] `POST /api/transcript`
 - [ ] **Checkpoint:** merge → `main`
 
 ### Phase 5 · Run + Test
-- [ ] `npx tsc --noEmit` and `npm run build`: fix any type errors
+- [x] `npx tsc --noEmit` passes
+- [ ] `npm run build`
 - [ ] Seed database, log in via `curl` / browser as each role
-- [ ] Supplied transcript → 3 projects, 12 tasks, hours 40 / 46 / 38
-- [ ] Changed-input test: QuickServe integration 12 h, 23 Oct → only that task changes
-- [ ] No Kamran, no payment / inventory / maps / email tasks
+- [x] Supplied transcript → 3 projects, 12 tasks, hours 40 / 46 / 38 (`npm run ai:test`)
+- [x] Changed-input test: QuickServe integration 12 h, 23 Oct → only that task changes
+- [x] No Kamran, no payment / inventory / maps / email tasks
 - [ ] Direct access check: Ali calling another project's `/api/projects/:id` → `403`
 - [~] `prisma/reset.ts` deletes projects/tasks/runs but keeps users (needs npm script)
 
@@ -150,7 +153,7 @@ TranscriptResultDTO { runId, model, projects: ProjectDTO[], taskCount }
 ### Phase 5 · Submission
 - [ ] Fill `README.md` from template (commands, env vars, accounts, test steps, links, limitations)
 - [x] `.env.example`: `DATABASE_URL`, `GROQ_API_KEY`, `GROQ_MODEL`, `GROQ_FALLBACK_MODEL`, `SESSION_SECRET`
-- [ ] Save transcript as `docs/transcript.txt` for judges
+- [x] Save transcript as `docs/transcript.txt` for judges
 
 ---
 

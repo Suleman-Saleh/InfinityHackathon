@@ -1,5 +1,5 @@
 import type { Prisma } from "@prisma/client";
-import { completeJSON } from "@/lib/ai";
+import { AIOutputError, completeJSON, type AIResult } from "@/lib/ai";
 import { prisma } from "@/lib/db";
 import { ForbiddenError, UpstreamError, ValidationError } from "@/lib/errors";
 import { fromDateString } from "@/lib/format";
@@ -7,7 +7,7 @@ import { toProjectDTO } from "@/modules/projects/project.service";
 import { userService } from "@/modules/users/user.service";
 import type { CurrentUser, TranscriptResultDTO } from "@/types";
 import { buildMessages } from "./transcript.prompt";
-import { aiDraftSchema } from "./transcript.schema";
+import { aiDraftSchema, type AIDraft } from "./transcript.schema";
 import { validateDraft } from "./transcript.validate";
 
 const MAX_TRANSCRIPT_CHARS = 50_000;
@@ -25,29 +25,30 @@ export const transcriptService = {
     const directory = await userService.aiDirectory();
     const today = new Date().toISOString().slice(0, 10);
 
-    // 1. AI extraction
-    let ai: Awaited<ReturnType<typeof completeJSON>>;
+    // 1–2. AI extraction + shape check (retries with fallback model on failure)
+    let ai: AIResult<AIDraft>;
     try {
-      ai = await completeJSON(buildMessages(transcript, directory, today));
+      ai = await completeJSON(buildMessages(transcript, directory, today), (raw) => aiDraftSchema.parse(raw));
     } catch (err) {
+      if (err instanceof AIOutputError) {
+        const issues = ["The AI returned an unexpected format. Please try again."];
+        await logRun(user.id, transcript, err.raw, err.model, "INVALID", issues);
+        throw new ValidationError("Could not read the AI result", issues);
+      }
       const reason = err instanceof Error ? err.message : String(err);
       await logRun(user.id, transcript, null, null, "FAILED", [reason]);
       console.error("[transcript] AI call failed:", reason);
-      throw new UpstreamError("The AI service is unavailable right now. Please try again in a moment.");
-    }
-
-    // 2. Shape check
-    const parsed = aiDraftSchema.safeParse(ai.output);
-    if (!parsed.success) {
-      const issues = ["The AI returned an unexpected format. Please try again."];
-      await logRun(user.id, transcript, ai.output, ai.model, "INVALID", issues);
-      throw new ValidationError("Could not read the AI result", issues);
+      throw new UpstreamError(
+        /429/.test(reason)
+          ? "The AI service is busy (rate limit reached). Please wait about a minute and try again."
+          : "The AI service is unavailable right now. Please try again in a moment.",
+      );
     }
 
     // 3. Business validation
-    const result = validateDraft(parsed.data, directory);
+    const result = validateDraft(ai.output, directory);
     if (!result.ok) {
-      await logRun(user.id, transcript, ai.output, ai.model, "INVALID", result.issues);
+      await logRun(user.id, transcript, ai.raw, ai.model, "INVALID", result.issues);
       throw new ValidationError(
         "Some required information could not be resolved. Please correct the transcript and try again. Nothing was saved.",
         result.issues,
@@ -60,7 +61,7 @@ export const transcriptService = {
         data: {
           createdById: user.id,
           transcript,
-          aiOutput: ai.output as Prisma.InputJsonValue,
+          aiOutput: ai.raw as Prisma.InputJsonValue,
           model: ai.model,
           status: "SUCCESS",
           issues: [],
