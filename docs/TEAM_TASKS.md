@@ -39,6 +39,7 @@ Hi Suleman, the app is **live and tested**: https://infinity-hackathon.vercel.ap
 - [ ] **What Works**: add the **team member detail page** (each person's work, filtered by the viewer's access)
 - [ ] **How Judges Can Test, step 10**: judges on the **live site can't run `npm run db:reset`**. Reword: on the live site, creating from the modified transcript adds a new set of 3 projects next to the existing ones; open the new QuickServe and check *Mobile integration and testing* is 12 h / 23 Oct (48 h total). `db:reset` is for local runs only.
 - [ ] **Demo video**: replace `[video URL]` in **Links** and **Submission Summary** once we record it (or write "Live demo at the link above" if we skip the video)
+- [ ] **Links** section: add **API docs (Swagger): https://infinity-hackathon.vercel.app/api-docs** and link the new docs: [`docs/DOCUMENTATION.md`](docs/DOCUMENTATION.md) (complete app docs) and [`docs/API.md`](docs/API.md) (API reference)
 - [ ] Check no `[ ... ]` placeholders are left: `grep -n "\[" README.md`
 - [ ] Commit + push to `main`
 

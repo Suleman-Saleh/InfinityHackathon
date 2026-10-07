@@ -1,0 +1,503 @@
+openapi: 3.0.3
+info:
+  title: NovaWorks AI Project Manager API
+  version: 1.0.0
+  description: |
+    REST API behind the NovaWorks AI Project Manager (The Infinity Hack '26, team **Dual Byte**).
+
+    **Authentication:** call `POST /api/auth/login` first. The server sets an httpOnly `session` cookie
+    (signed JWT, 8 hours). Every other endpoint reads the current user **only from that cookie**, never
+    from the request body. In this Swagger page the cookie is sent automatically after you log in with
+    "Try it out".
+
+    **Access rules (enforced on the server for every request):**
+    | Role | Projects | Tasks | Clients |
+    | --- | --- | --- | --- |
+    | ADMIN | all | all | all (can edit + rename) |
+    | MANAGER | projects they manage | all tasks in their projects | clients of their projects (can edit, not rename) |
+    | AGENT | projects containing their tasks | **only their own tasks** | clients of those projects (read-only, notes hidden) |
+
+    Only the ADMIN can create projects from a transcript.
+
+    **Errors** always have the shape `{ "error": string, "issues"?: string[] }`.
+
+    Demo accounts (fictional): `admin@novaworks.example`, `ayesha@novaworks.example` (manager),
+    `ali@novaworks.example` (agent)... password `Demo123!` for all.
+servers:
+  - url: /
+    description: This deployment
+tags:
+  - name: Auth
+    description: Login, logout and the current session
+  - name: Team
+    description: Team directory and team member work
+  - name: Projects
+    description: Projects and their tasks (role-filtered)
+  - name: Tasks
+    description: An agent's own tasks
+  - name: Clients
+    description: CRM client accounts and contact details
+  - name: Transcript
+    description: AI conversion of a meeting transcript into projects and tasks
+
+paths:
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Log in with a demo account
+      description: Verifies the email and bcrypt password hash, then sets the `session` cookie.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email, example: admin@novaworks.example }
+                password: { type: string, example: Demo123! }
+      responses:
+        "200":
+          description: Logged in. Sets the `session` cookie.
+          headers:
+            Set-Cookie:
+              schema: { type: string, example: "session=eyJ...; Path=/; HttpOnly; Secure; SameSite=Lax" }
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user: { $ref: "#/components/schemas/CurrentUser" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401":
+          description: Wrong email or password (same message for both)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example: { error: Invalid email or password }
+
+  /api/auth/logout:
+    post:
+      tags: [Auth]
+      summary: Log out
+      description: Deletes the session cookie.
+      security: []
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Ok" }
+
+  /api/auth/me:
+    get:
+      tags: [Auth]
+      summary: Current user
+      responses:
+        "200":
+          description: The logged-in user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user: { $ref: "#/components/schemas/CurrentUser" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /api/users:
+    get:
+      tags: [Team]
+      summary: Team directory
+      description: All ten users with role, specialization and skills. Password hashes are never returned.
+      responses:
+        "200":
+          description: Users
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/User" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /api/users/{id}:
+    get:
+      tags: [Team]
+      summary: Team member profile and work
+      description: |
+        A person's profile plus the projects they manage or the tasks assigned to them,
+        **limited to what the viewer may already see**: admin sees everything, a manager only work in
+        their own projects, an agent only their own tasks. `limited` is true when part of the person's
+        work is hidden from the viewer.
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          description: Team member
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TeamMember" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/projects:
+    get:
+      tags: [Projects]
+      summary: List projects visible to the current user
+      description: |
+        ADMIN: all projects. MANAGER: projects they manage. AGENT: projects that contain their tasks;
+        `taskCount` and `totalHours` then count only the agent's own tasks.
+      responses:
+        "200":
+          description: Projects, ordered by deadline
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Project" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /api/projects/{id}:
+    get:
+      tags: [Projects]
+      summary: Project detail with tasks
+      description: Agents receive only their own tasks. A project outside the user's access returns `403`.
+      parameters:
+        - $ref: "#/components/parameters/ProjectId"
+      responses:
+        "200":
+          description: Project with tasks
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProjectDetail" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/tasks/mine:
+    get:
+      tags: [Tasks]
+      summary: The current agent's tasks
+      description: Agents only. Each task includes its project name, client and manager.
+      responses:
+        "200":
+          description: Tasks, ordered by deadline
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/MyTask" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /api/clients:
+    get:
+      tags: [Clients]
+      summary: List clients visible to the current user
+      description: Stats (`projectCount`, `taskCount`, `totalHours`, `nextDeadline`) cover only projects/tasks the user can see.
+      responses:
+        "200":
+          description: Clients, ordered by name
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Client" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /api/clients/{id}:
+    get:
+      tags: [Clients]
+      summary: Client detail with visible projects
+      parameters:
+        - $ref: "#/components/parameters/ClientId"
+      responses:
+        "200":
+          description: Client
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ClientDetail" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      tags: [Clients]
+      summary: Update client details
+      description: |
+        ADMIN, or a MANAGER of one of the client's projects. Only ADMIN may change `name`
+        (the new name is copied to every project of the client in the same transaction).
+        All fields are optional; unknown fields are rejected.
+      parameters:
+        - $ref: "#/components/parameters/ClientId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ClientUpdate" }
+            example:
+              contactName: Sana Iqbal
+              contactEmail: sana@urbancart.example
+              contactPhone: "+92 300 1234567"
+      responses:
+        "200":
+          description: Updated client
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ClientDetail" }
+        "400":
+          description: Validation failed (invalid email/phone, duplicate name, unknown field...)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: Please fix the following and save again.
+                issues: [Contact email is not a valid email address]
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/transcript:
+    post:
+      tags: [Transcript]
+      summary: Create projects and tasks from a meeting transcript (AI)
+      description: |
+        ADMIN only. Pipeline:
+        1. Load the team directory (id, name, role, specialization, skills; no emails or passwords).
+        2. Ask the AI (Groq `openai/gpt-oss-120b`, fallback `openai/gpt-oss-20b`) for JSON using only final decisions.
+           Rate limits are retried automatically.
+        3. Validate the shape (zod) and the business rules: manager is a MANAGER, assignee is an AGENT,
+           hours > 0, valid dates, task deadline ≤ project deadline.
+        4. If anything is invalid, **nothing is saved** and `400` lists the issues.
+        5. Otherwise save all projects, tasks and clients in **one database transaction**.
+
+        Every attempt is logged as a TranscriptRun. Typical duration: 10–25 seconds. Maximum transcript length: 50,000 characters.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [transcript]
+              properties:
+                transcript:
+                  type: string
+                  maxLength: 50000
+                  example: "Meeting: NovaWorks Client Delivery Planning\nDate: 7 October 2026\n..."
+      responses:
+        "201":
+          description: Projects and tasks created and saved
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TranscriptResult" }
+        "400":
+          description: Empty / too long transcript, or required information could not be resolved. Nothing saved.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: Some required information could not be resolved. Please correct the transcript and try again. Nothing was saved.
+                issues:
+                  - "Client Portal for BrightBank: project manager could not be identified."
+                  - "Client Portal for BrightBank / Login page: task deadline is missing or invalid (none)."
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "502":
+          description: AI provider unavailable or rate-limited after retries. Nothing saved.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example: { error: "The AI service is busy (rate limit reached). Please wait about a minute and try again." }
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: session
+      description: Set automatically by `POST /api/auth/login`.
+
+  parameters:
+    UserId:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, example: DEV01 }
+      description: Seeded user id (ADMIN, PM01–PM03, DEV01–DEV06)
+    ProjectId:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, example: cmuxrxk44000ruys46lqeb038 }
+    ClientId:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, example: cmuxrxjcj000puys478aaptrs }
+
+  responses:
+    BadRequest:
+      description: Invalid input
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Unauthorized:
+      description: Not logged in or session expired
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { error: Please log in }
+    Forbidden:
+      description: Logged in, but this role / user may not access the resource
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { error: You do not have access to this project }
+    NotFound:
+      description: Resource does not exist
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { error: Project not found }
+
+  schemas:
+    Role:
+      type: string
+      enum: [ADMIN, MANAGER, AGENT]
+    Date:
+      type: string
+      format: date
+      example: "2026-10-20"
+    PersonRef:
+      type: object
+      properties:
+        id: { type: string, example: PM01 }
+        name: { type: string, example: Ayesha Khan }
+    CurrentUser:
+      type: object
+      properties:
+        id: { type: string, example: ADMIN }
+        name: { type: string, example: Admin }
+        email: { type: string, example: admin@novaworks.example }
+        role: { $ref: "#/components/schemas/Role" }
+    User:
+      type: object
+      properties:
+        id: { type: string, example: DEV01 }
+        name: { type: string, example: Ali Raza }
+        email: { type: string, example: ali@novaworks.example }
+        role: { $ref: "#/components/schemas/Role" }
+        specialization: { type: string, example: Full-Stack }
+        skills: { type: array, items: { type: string }, example: [React, Frontend integration] }
+    Project:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string, example: UrbanCart Website }
+        clientName: { type: string, example: UrbanCart Clothing }
+        clientId: { type: string, nullable: true }
+        description: { type: string }
+        deadline: { $ref: "#/components/schemas/Date" }
+        manager: { $ref: "#/components/schemas/PersonRef" }
+        taskCount: { type: integer, example: 4 }
+        totalHours: { type: number, example: 40 }
+    Task:
+      type: object
+      properties:
+        id: { type: string }
+        projectId: { type: string }
+        title: { type: string, example: Product catalog UI }
+        description: { type: string }
+        deadline: { $ref: "#/components/schemas/Date" }
+        estimatedHours: { type: number, example: 12 }
+        assignee: { $ref: "#/components/schemas/PersonRef" }
+    ProjectDetail:
+      allOf:
+        - $ref: "#/components/schemas/Project"
+        - type: object
+          properties:
+            tasks: { type: array, items: { $ref: "#/components/schemas/Task" } }
+    MyTask:
+      allOf:
+        - $ref: "#/components/schemas/Task"
+        - type: object
+          properties:
+            project:
+              type: object
+              properties:
+                id: { type: string }
+                name: { type: string }
+                clientName: { type: string }
+                manager: { $ref: "#/components/schemas/PersonRef" }
+    TeamMember:
+      type: object
+      properties:
+        user: { $ref: "#/components/schemas/User" }
+        projects:
+          type: array
+          description: Projects this person manages (visible to the viewer)
+          items: { $ref: "#/components/schemas/Project" }
+        tasks:
+          type: array
+          description: Tasks assigned to this person (visible to the viewer)
+          items: { $ref: "#/components/schemas/MyTask" }
+        limited: { type: boolean, description: True when part of this person's work is hidden from the viewer }
+    ClientContact:
+      type: object
+      properties:
+        industry: { type: string, example: Fashion retail }
+        contactName: { type: string, example: Sana Iqbal }
+        contactEmail: { type: string, example: sana@urbancart.example }
+        contactPhone: { type: string, example: "+92 300 1234567" }
+        website: { type: string, example: urbancart.example }
+        notes: { type: string, description: Always empty for agents }
+    Client:
+      allOf:
+        - $ref: "#/components/schemas/ClientContact"
+        - type: object
+          properties:
+            id: { type: string }
+            name: { type: string, example: UrbanCart Clothing }
+            projectCount: { type: integer }
+            taskCount: { type: integer }
+            totalHours: { type: number }
+            nextDeadline: { allOf: [{ $ref: "#/components/schemas/Date" }], nullable: true }
+            managers: { type: array, items: { $ref: "#/components/schemas/PersonRef" } }
+            canEdit: { type: boolean }
+            updatedAt: { type: string, format: date-time }
+    ClientDetail:
+      allOf:
+        - $ref: "#/components/schemas/Client"
+        - type: object
+          properties:
+            projects: { type: array, items: { $ref: "#/components/schemas/Project" } }
+    ClientUpdate:
+      type: object
+      additionalProperties: false
+      properties:
+        name: { type: string, maxLength: 120, description: ADMIN only }
+        industry: { type: string, maxLength: 120 }
+        contactName: { type: string, maxLength: 120 }
+        contactEmail: { type: string, maxLength: 200, description: Valid email or empty string }
+        contactPhone: { type: string, maxLength: 40, description: "Digits, spaces and + ( ) - . only" }
+        website: { type: string, maxLength: 200 }
+        notes: { type: string, maxLength: 2000 }
+    TranscriptResult:
+      type: object
+      properties:
+        runId: { type: string, description: TranscriptRun audit record id }
+        model: { type: string, example: openai/gpt-oss-120b }
+        projects: { type: array, items: { $ref: "#/components/schemas/Project" } }
+        taskCount: { type: integer, example: 12 }
+    Ok:
+      type: object
+      properties:
+        ok: { type: boolean, example: true }
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string }
+        issues: { type: array, items: { type: string } }
+
+security:
+  - sessionCookie: []
