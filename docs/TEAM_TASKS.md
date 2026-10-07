@@ -19,7 +19,7 @@
 | Root layout + global styles | ✅ Done |
 | Frontend pages + components | ⬜ Not started |
 | Local database | ✅ Docker container `novaworks-db` on port 5434 (see below) |
-| Aiven database (for deployment) | 📨 Suleman invited to the Aiven project (see **Note for Suleman** below) |
+| Aiven database (for deployment) | 📨 Ali shares the connection string privately with Suleman (see **Note for Suleman** below) |
 | AI models | `openai/gpt-oss-120b` primary, `openai/gpt-oss-20b` fallback (Llama 3.3 is no longer on our Groq account) |
 | Groq API key in `.env` | ✅ Added |
 | README, deployment, demo video | ⬜ Not started |
@@ -30,11 +30,12 @@
 
 ## 📨 Note for Suleman: Aiven Access
 
-Ali has sent you an **invite to our Aiven project** by email.
+The Aiven invite email didn't arrive, so **Ali will send you the Aiven connection string (Service URI) privately**.
 
-1. Open the email from Aiven and **accept the invite** (create an account with that email if you don't have one).
-2. In the Aiven Console, open our project → the **PostgreSQL** service.
-3. You can see the **Service URI** there (`postgres://avnadmin:...@...aivencloud.com:PORT/defaultdb?sslmode=require`). You'll need it for deployment (Vercel env var `DATABASE_URL`).
+1. Copy it exactly as text (not from a screenshot).
+2. Save it somewhere private. For deployment it goes into Vercel's env var `DATABASE_URL`. Only put it in your local `.env` if you need to run a command against Aiven (and switch back to your local Docker URL afterwards).
+3. Delete the chat message once saved.
+4. If the string ever leaks, tell Ali so he can reset the password in the Aiven Console (service → **Users**).
 
 **Rules for the shared Aiven database**
 - 🔒 Never commit the Service URI or paste it in group chats / screenshots. It only goes in your local `.env` or Vercel env vars.
@@ -117,7 +118,7 @@ TranscriptResultDTO { runId, model, projects: ProjectDTO[], taskCount }
 - [x] `.gitignore` (keeps `.env` out of git) and `.env.example`
 - [x] Install `@prisma/client@6.19.3`, `prisma@6.19.3`, `bcryptjs`, `jose`, `zod`, `tsx`
 - [x] Local Postgres in Docker, `DATABASE_URL` in `.env`
-- [x] Invite Suleman to the Aiven project
+- [x] Share Aiven connection string privately with Suleman (invite email didn't arrive)
 - [ ] Aiven Postgres: run `migrate deploy` + `db:seed` once before deployment
 - [x] Add Groq key to `.env` (`GROQ_API_KEY`) and a random `SESSION_SECRET`
 - [x] Prisma schema: `User`, `Project`, `Task`, `TranscriptRun` (+ `Role`, `RunStatus` enums, indexes)
@@ -200,7 +201,7 @@ TranscriptResultDTO { runId, model, projects: ProjectDTO[], taskCount }
 
 | Step | Task |
 |---|---|
-| Now | Ali: backend done and tested · Suleman: accept the Aiven invite, set up local DB, start pages |
+| Now | Ali: backend done and tested · Suleman: save the Aiven string Ali sends, set up local DB, start pages |
 | After push | Suleman builds against the live local API |
 | Deploy | Vercel project, env vars, `prisma migrate deploy`, seed hosted DB, test live |
 | Final | Record demo video, rehearse demo, final push |
