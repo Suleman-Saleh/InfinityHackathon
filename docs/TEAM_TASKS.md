@@ -33,15 +33,17 @@
 Hi Suleman, the app is **live and tested**: https://infinity-hackathon.vercel.app (all 10 logins, transcript 12/12, changed-input test in ~22 s, every role's access + `403`s). I already added the live URL, deployment status, deployed commit and a "Verified on the live site" list to the README, and removed the Member 3/4 rows. Your team member detail page is merged too. Nice addition.
 
 **Please update `README.md` so it matches `README_Template (1).md` exactly:**
-- [ ] **Team name: `Dual Byte`** (line `- Team name: [team name]`)
-- [ ] **Title** in the template's format: `# NovaWorks AI Project Manager - AI Meeting to Project CRM`
-- [ ] **Team**: the template says "four members". Write **"Two members"** and keep our two names + responsibilities (add your team member detail page to your line)
-- [ ] **What Works**: add the **team member detail page** (each person's work, filtered by the viewer's access)
-- [ ] **How Judges Can Test, step 10**: judges on the **live site can't run `npm run db:reset`**. Reword: on the live site, creating from the modified transcript adds a new set of 3 projects next to the existing ones; open the new QuickServe and check *Mobile integration and testing* is 12 h / 23 Oct (48 h total). `db:reset` is for local runs only.
-- [ ] **Demo video**: replace `[video URL]` in **Links** and **Submission Summary** once we record it (or write "Live demo at the link above" if we skip the video)
-- [ ] **Links** section: add **API docs (Swagger): https://infinity-hackathon.vercel.app/api-docs** and link the new docs: [`docs/DOCUMENTATION.md`](docs/DOCUMENTATION.md) (complete app docs) and [`docs/API.md`](docs/API.md) (API reference)
-- [ ] Check no `[ ... ]` placeholders are left: `grep -n "\[" README.md`
-- [ ] Commit + push to `main`
+- [x] **Team name: `Dual Byte`** (line `- Team name: [team name]`)
+- [x] **Title** in the template's format: `# NovaWorks AI Project Manager - AI Meeting to Project CRM`
+- [x] **Team**: the template says "four members". Write **"Two members"** and keep our two names + responsibilities (add your team member detail page to your line)
+- [x] **What Works**: add the **team member detail page** (each person's work, filtered by the viewer's access)
+- [x] **How Judges Can Test, step 10**: judges on the **live site can't run `npm run db:reset`**. Reword: on the live site, creating from the modified transcript adds a new set of 3 projects next to the existing ones; open the new QuickServe and check *Mobile integration and testing* is 12 h / 23 Oct (48 h total). `db:reset` is for local runs only.
+- [x] **Demo video**: replace `[video URL]` in **Links** and **Submission Summary** once we record it (or write "Live demo at the link above" if we skip the video). **Set to "Live demo at the link above"; replace if we record one**
+- [x] **Links** section: add **API docs (Swagger): https://infinity-hackathon.vercel.app/api-docs** and link the new docs: [`docs/DOCUMENTATION.md`](docs/DOCUMENTATION.md) (complete app docs) and [`docs/API.md`](docs/API.md) (API reference)
+- [x] Check no `[ ... ]` placeholders are left: `grep -n "\[" README.md`
+- [x] Commit + push to `main`
+
+**✅ Suleman: README final pass done.** Title, team name *Dual Byte*, "Two members", team member page, live-site wording for step 10 (no `db:reset` for judges), video line, API docs links (Swagger + docs), deployed-commit note (Vercel auto-deploys `main`; the team member route is live). No placeholders left.
 
 **Before judging (together):** agree, then `npm run db:reset` so judges see the transcript create the projects live. The live DB currently has 3 projects.
 

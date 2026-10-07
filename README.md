@@ -1,14 +1,14 @@
-# NovaWorks AI Project Manager: Meeting to Execution
+# NovaWorks AI Project Manager - AI Meeting to Project CRM
 
 A simple project management CRM for NovaWorks Technologies. The administrator pastes a meeting transcript, and AI creates the projects and tasks, assigns the right managers and developers, and sets deadlines and estimated hours. Each user then logs in and sees only the work they are allowed to see.
 
 Built for **The Infinity Hack '26**.
 
 ## Team
-- Team name: [team name]
-- Members and responsibilities:
+- Team name: **Dual Byte**
+- Two members and responsibilities:
   - **Muhammad Ali**: backend, database, authentication, role-based API, AI transcript conversion, Clients (CRM) feature
-  - **Malik Muhammad Suleman Saleh**: frontend pages and components, UI/UX, integration testing, README
+  - **Malik Muhammad Suleman Saleh**: frontend pages and components, UI/UX, team member detail page, integration testing, README
 - Repository: https://github.com/Suleman-Saleh/InfinityHackathon
 
 ## What Works
@@ -37,7 +37,9 @@ Built for **The Infinity Hack '26**.
 
 ## Links
 - Live application: **https://infinity-hackathon.vercel.app** (log in with any demo account below)
-- Demo video: [video URL]
+- Demo video: Live demo at the link above
+- API docs (Swagger UI): https://infinity-hackathon.vercel.app/api-docs
+- Documentation: [`docs/DOCUMENTATION.md`](docs/DOCUMENTATION.md) (complete app docs) · [`docs/API.md`](docs/API.md) (API reference)
 
 ## Requirements
 - Node.js 20.9 or newer, npm
@@ -125,15 +127,15 @@ These emails are fictional identifiers, not mailboxes. Signup, email verificatio
 7. Log in as **Hamza**: his two API tasks span UrbanCart and QuickServe.
 8. Check direct access: as admin, copy a QuickServe project URL; as Ali, open it. You'll see *"You don't have access to this project"*. The API returns `403` for the same request.
 9. Refresh any page: the data is still there.
-10. Changed input: run `npm run db:reset`, load the transcript, change Usman's final QuickServe integration estimate to **12 hours, 23 October**, and create again. Only that task changes (QuickServe total becomes 48 hours).
+10. Changed input: load the transcript, change Usman's final QuickServe integration estimate to **12 hours, 23 October**, and create again. On the live site this adds a **new set of 3 projects** next to the existing ones (there is no reset button for judges). Open the new **QuickServe Mobile App** and check *Mobile integration and testing* is **12 hours, due 23 October** (QuickServe total **48 hours**); every other task is unchanged.
 
-**Resetting between tests:** `npm run db:reset` removes generated projects, tasks, clients and transcript runs but keeps the ten seeded users. Creating from the same transcript twice without a reset adds a second copy of the projects (clients are reused).
+**Resetting between tests (local runs only):** `npm run db:reset` removes generated projects, tasks, clients and transcript runs but keeps the ten seeded users. Creating from the same transcript twice without a reset adds a second copy of the projects (clients are reused).
 
 ## Deployment Details
 - Deployment status: **Live**
 - Frontend and backend host: Vercel (one Next.js app serves both the pages and the API routes), https://infinity-hackathon.vercel.app
 - Database: Aiven PostgreSQL (free plan), SSL required
-- Deployed branch/commit: `main` @ `07acc36`
+- Deployed branch/commit: `main`, auto-deployed by Vercel on every push (live-tested at `07acc36`; includes the team member page from `db41d51`)
 - Verified on the live site (7 Oct 2026):
   - All 10 demo accounts log in; wrong password → `401`; session cookie is `Secure` + `HttpOnly`
   - Supplied transcript → 3 projects / 12 tasks / 40 · 46 · 38 hours
@@ -159,7 +161,7 @@ These emails are fictional identifiers, not mailboxes. Signup, email verificatio
 
 ## Submission Summary
 - Source repository: https://github.com/Suleman-Saleh/InfinityHackathon
-- Live link: https://infinity-hackathon.vercel.app · Demo video: [video URL]
+- Live link: https://infinity-hackathon.vercel.app · Demo video: live demo at the link above
 - Setup and seed commands: documented above
 - Demo login accounts: confirmed working
-- Features completed: seeded login, role-based access, AI transcript → projects and tasks with validation and all-or-nothing save, project/task screens, My Tasks, Team Directory, Clients (CRM)
+- Features completed: seeded login, role-based access, AI transcript → projects and tasks with validation and all-or-nothing save, project/task screens, My Tasks, Team Directory with team member detail, Clients (CRM)
