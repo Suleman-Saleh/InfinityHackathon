@@ -21,3 +21,6 @@ build/
 *.tsbuildinfo
 next-env.d.ts
 *.pem
+
+# Office lock files
+~$*
