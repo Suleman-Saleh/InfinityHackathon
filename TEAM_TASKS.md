@@ -2,7 +2,7 @@
 
 **Team:** Muhammad Ali (Backend + AI) · Malik Muhammad Suleman Saleh (Frontend + Integration)
 **Stack:** Next.js (App Router) · Prisma · PostgreSQL (Aiven) · Groq · Vercel
-**Build time:** 3 hours
+**Build time:** 3 hours · **Architecture:** see [ARCHITECTURE.md](ARCHITECTURE.md)
 
 ---
 
@@ -10,12 +10,12 @@
 
 | Area | Owner | Files / folders |
 |---|---|---|
-| Project setup, schema, seed | **Ali** | `prisma/`, `lib/db.ts`, `package.json` |
-| Auth + sessions | **Ali** | `lib/auth.ts`, `app/api/auth/*` |
-| Role-based data API | **Ali** | `app/api/projects/*`, `app/api/tasks/*`, `app/api/users/*` |
-| AI transcript conversion | **Ali** | `lib/ai.ts`, `lib/validate.ts`, `app/api/transcript/*` |
-| Pages + UI components | **Suleman** | `app/(pages)/*`, `components/*` |
-| Styling | **Suleman** | `app/globals.css`, Tailwind config |
+| Project setup, schema, seed | **Ali** | `prisma/`, `src/lib/db.ts`, `src/lib/env.ts`, `src/lib/errors.ts`, `src/lib/http.ts`, `package.json` |
+| Auth + sessions | **Ali** | `src/modules/auth/*`, `src/app/api/auth/*` |
+| Role-based data API | **Ali** | `src/modules/{users,projects,tasks}/*`, `src/app/api/{users,projects,tasks}/*` |
+| AI transcript conversion | **Ali** | `src/lib/ai/*`, `src/modules/transcript/*`, `src/app/api/transcript/*` |
+| Pages + UI components | **Suleman** | `src/app/(auth)/*`, `src/app/(dashboard)/*`, `src/components/*`, `src/types/*` |
+| Styling | **Suleman** | `src/app/globals.css`, Tailwind config |
 | README, `.env.example`, demo video | **Suleman** | `README.md`, `.env.example` |
 | Deployment | **Both** | Vercel + Aiven |
 
@@ -60,7 +60,7 @@ Task    { id, projectId, title, description, deadline, estimatedHours, assignee:
 ### Phase 2 · Seed + Auth (0:20 – 0:45)
 - [ ] `prisma/seed.ts`: upsert 10 users by email (IDs `ADMIN`, `PM01–PM03`, `DEV01–DEV06`), bcrypt hash `Demo123!`
 - [ ] Verify re-running seed creates no duplicates
-- [ ] `lib/auth.ts`: sign/verify JWT in httpOnly cookie, `getCurrentUser()` from cookie only
+- [ ] `src/modules/auth/session.ts`: sign/verify JWT in httpOnly cookie, `getCurrentUser()` from cookie only
 - [ ] Login / logout / me routes
 
 ### Phase 3 · Role-based API (0:45 – 1:05)
@@ -71,10 +71,10 @@ Task    { id, projectId, title, description, deadline, estimatedHours, assignee:
 - [ ] **Checkpoint:** merge `backend` → `main`, tell Suleman API is live
 
 ### Phase 4 · AI Transcript (1:05 – 1:50)
-- [ ] `lib/ai.ts`: call Groq (`https://api.groq.com/openai/v1`) with transcript + directory (id, name, role, skills — **no passwords**), request JSON output
+- [ ] `src/lib/ai/groq.ts` (behind `AIProvider` interface): call Groq (`https://api.groq.com/openai/v1`) with transcript + directory (id, name, role, skills — **no passwords**), request JSON output
 - [ ] Prompt rules: use **final** decisions, ignore rejected features, only existing IDs, never invent people, dates `YYYY-MM-DD` in 2026
 - [ ] Backup Groq model (`GROQ_FALLBACK_MODEL`) if the first fails / rate-limits
-- [ ] `lib/validate.ts` (zod): required fields, manager is MANAGER, assignee is AGENT, hours > 0, task deadline ≤ project deadline
+- [ ] `src/modules/transcript/transcript.schema.ts` + `transcript.validate.ts` (zod): required fields, manager is MANAGER, assignee is AGENT, hours > 0, task deadline ≤ project deadline
 - [ ] `POST /api/transcript`: admin-only, reject empty, validate, save in **one `prisma.$transaction`**, return summary or `issues[]`
 - [ ] **Checkpoint:** merge → `main`
 
@@ -93,7 +93,7 @@ Task    { id, projectId, title, description, deadline, estimatedHours, assignee:
 - [ ] Pull skeleton once Ali pushes; create `frontend` branch
 - [ ] App shell: navbar with user name, role badge, logout button
 - [ ] `/login` page: email + password, error message on bad login, redirect by role
-- [ ] `lib/mock.ts` with sample data matching the API contract
+- [ ] `src/lib/mock.ts` with sample data matching the API contract
 
 ### Phase 2 · Core Screens (0:30 – 1:10)
 - [ ] `/` home — redirects per role
