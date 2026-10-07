@@ -1,7 +1,7 @@
 # Team Task Division
 
 **Team:** Muhammad Ali (Backend + AI) · Malik Muhammad Suleman Saleh (Frontend + Integration)
-**Stack:** Next.js (App Router) · Prisma · PostgreSQL (Aiven) · OpenRouter · Vercel
+**Stack:** Next.js (App Router) · Prisma · PostgreSQL (Aiven) · Groq · Vercel
 **Build time:** 3 hours
 
 ---
@@ -71,9 +71,9 @@ Task    { id, projectId, title, description, deadline, estimatedHours, assignee:
 - [ ] **Checkpoint:** merge `backend` → `main`, tell Suleman API is live
 
 ### Phase 4 · AI Transcript (1:05 – 1:50)
-- [ ] `lib/ai.ts`: call OpenRouter with transcript + directory (id, name, role, skills — **no passwords**), request JSON output
+- [ ] `lib/ai.ts`: call Groq (`https://api.groq.com/openai/v1`) with transcript + directory (id, name, role, skills — **no passwords**), request JSON output
 - [ ] Prompt rules: use **final** decisions, ignore rejected features, only existing IDs, never invent people, dates `YYYY-MM-DD` in 2026
-- [ ] Backup model if the first fails / rate-limits
+- [ ] Backup Groq model (`GROQ_FALLBACK_MODEL`) if the first fails / rate-limits
 - [ ] `lib/validate.ts` (zod): required fields, manager is MANAGER, assignee is AGENT, hours > 0, task deadline ≤ project deadline
 - [ ] `POST /api/transcript`: admin-only, reject empty, validate, save in **one `prisma.$transaction`**, return summary or `issues[]`
 - [ ] **Checkpoint:** merge → `main`
@@ -118,7 +118,7 @@ Task    { id, projectId, title, description, deadline, estimatedHours, assignee:
 
 ### Phase 5 · Submission (2:20 – 2:45)
 - [ ] Fill `README.md` from template (commands, env vars, accounts, test steps, links, limitations)
-- [ ] `.env.example`: `DATABASE_URL`, `OPENROUTER_API_KEY`, `OPENROUTER_MODEL`, `SESSION_SECRET`
+- [ ] `.env.example`: `DATABASE_URL`, `GROQ_API_KEY`, `GROQ_MODEL`, `GROQ_FALLBACK_MODEL`, `SESSION_SECRET`
 - [ ] Save transcript as `docs/transcript.txt` for judges
 
 ---
