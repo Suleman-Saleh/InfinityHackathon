@@ -17,7 +17,7 @@
 | AI transcript conversion | ✅ **Tested with Groq: 12/12 tasks match the answer key**, changed-input test passes, rate-limit retry + fallback works |
 | Shared API types (`src/types/index.ts`) | ✅ Done |
 | Root layout + global styles | ✅ Done |
-| Frontend pages + components | ⬜ Not started |
+| Frontend pages + components | ✅ All 6 pages built on `frontend` branch (login, dashboard, project detail, transcript, my tasks, team); end-to-end role test pending |
 | Database | ✅ **Shared Aiven Postgres**, migrated + seeded (10 users). Both of us use it (see **Note for Suleman**) |
 | AI models | `openai/gpt-oss-120b` primary, `openai/gpt-oss-20b` fallback (Llama 3.3 is no longer on our Groq account) |
 | Groq API key in `.env` | ✅ Added |
@@ -158,33 +158,39 @@ TranscriptResultDTO { runId, model, projects: ProjectDTO[], taskCount }
 
 ## Malik Muhammad Suleman Saleh — Frontend + Integration
 
-> The backend is already written, so **no mock data is needed**. Build directly against the real API once the database is seeded. Import all types from `@/types`.
-> Note: the default `src/app/page.tsx` was removed; the home page needs to be created.
+> Built on the `frontend` branch directly against the real API. All types come from `@/types`.
+> Auth checks for navigation run in server layouts/pages via `getCurrentUser()`; the API still enforces every rule.
 
 ### Phase 1 · Layout + Login
-- [ ] Pull `main`, create `frontend` branch
-- [ ] `src/lib/api-client.ts`: `api<T>(path, { method, body })` that throws an error with `status` and `issues[]`
-- [ ] App shell (`src/app/(dashboard)/layout.tsx`): calls `/api/auth/me`, redirects to `/login` on `401`; navbar with name, role badge, role-based links, logout
-- [ ] `/login` page: email + password, error message on bad login, redirect by role; show demo accounts list for convenience
+- [x] Pull `main`, create `frontend` branch
+- [x] `src/lib/api-client.ts`: `api<T>(path, { method, body })` throws `ApiRequestError` with `status` and `issues[]`; `401` → back to `/login`
+- [x] App shell (`src/app/(dashboard)/layout.tsx` + `src/components/Sidebar.tsx`): redirects to `/login` when logged out; sidebar with name, role badge, role-based links, logout (collapses to a top menu on mobile)
+- [x] `/login` page: email + password, show/hide password, error on bad login, redirect by role; click-to-fill demo accounts list
 
 ### Phase 2 · Core Screens
-- [ ] `/` home: admin/manager → project cards; agent → redirect to `/my-tasks`
-- [ ] **Project cards**: name, client, manager, deadline, task count, total hours; admin sees **Create from Transcript** button
-- [ ] **Project detail** `/projects/[id]`: client, manager, deadline, description, task table (title, description, assignee, deadline, hours); `403` → "You don't have access" message
-- [ ] **Team directory** `/team`: read-only list of names, roles, specializations, skills
+- [x] `/` home: admin → "Dashboard", manager → "My Projects" (project cards + totals); agent → redirect to `/my-tasks`
+- [x] **Project cards** (`src/components/ProjectCard.tsx`): name, client, manager, deadline, task count, total hours; admin sees **Create from Transcript** button
+- [x] **Project detail** `/projects/[id]`: client, manager, deadline, description, task table (`src/components/TaskTable.tsx`); `403` → "You don't have access", `404` → "Project not found"; agents see only their own tasks
+- [x] **Team directory** `/team`: 9 employees with role, specialization, skills; All / Managers / Agents filter
 
 ### Phase 3 · Transcript + Agent Screens
-- [ ] `/transcript` page (admin only): large textarea + **Create from Transcript** button
-  - [ ] Disable button + spinner while processing (can take 5–20 s)
-  - [ ] Success: created projects + task counts, link to each
-  - [ ] Error: show `error` + `issues[]` list, keep the transcript so admin can fix and retry
-- [ ] **Agent "My Tasks"** `/my-tasks`: tasks grouped by project (project name + manager visible)
-- [ ] Empty states ("No projects yet. Create from a transcript")
+- [x] `/transcript` page (admin only): large textarea + **Create from Transcript** button, "Load supplied meeting transcript" button (`public/sample-transcript.txt`), team directory panel
+  - [x] Disable button + spinner + elapsed timer while processing
+  - [x] Success: created projects + task counts + hours, link to each
+  - [x] Error: show `error` + `issues[]` list, keep the transcript so admin can fix and retry
+  - [x] Warning when projects already exist (creating again adds more)
+- [x] **Agent "My Tasks"** `/my-tasks`: tasks grouped by project, sorted by deadline (project name + manager visible)
+- [x] Empty states ("No projects yet", "No tasks assigned yet")
+- [x] Inter font + indigo / teal / amber role styling
 
 ### Phase 4 · Integration Testing
+- [x] `tsc --noEmit` and `eslint src` pass
+- [x] Page access per role: logged out → `/login`; manager blocked from `/transcript`; agent sent to `/my-tasks`; admin blocked from `/my-tasks`
+- [ ] Run supplied transcript from the UI (adds 3 projects to the shared DB, tell Ali first)
 - [ ] Test as Admin, Ayesha (only UrbanCart), Ali (3 tasks), Hamza (2 tasks across 2 projects)
 - [ ] Refresh check: data persists
 - [ ] Logout works; visiting a page after logout → login
+- [ ] Merge `frontend` → `main`
 
 ### Phase 5 · Submission
 - [ ] Fill `README.md` from template (commands, env vars, accounts, test steps, links, limitations)
@@ -197,8 +203,8 @@ TranscriptResultDTO { runId, model, projects: ProjectDTO[], taskCount }
 
 | Step | Task |
 |---|---|
-| Now | Ali: backend done and tested · Suleman: put the Aiven string in `.env`, run `npm run dev`, start pages |
-| After push | Suleman builds against the live local API |
+| Now | Ali: backend done and tested · Suleman: frontend pages done on `frontend` branch, end-to-end test next |
+| After test | Merge `frontend` → `main`, then README |
 | Deploy | Vercel project + env vars (Aiven already migrated + seeded), `db:reset` before demo, test live |
 | Final | Record demo video, rehearse demo, final push |
 
