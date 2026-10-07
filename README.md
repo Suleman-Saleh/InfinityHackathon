@@ -9,8 +9,6 @@ Built for **The Infinity Hack '26**.
 - Members and responsibilities:
   - **Muhammad Ali**: backend, database, authentication, role-based API, AI transcript conversion, Clients (CRM) feature
   - **Malik Muhammad Suleman Saleh**: frontend pages and components, UI/UX, integration testing, README
-  - [Member 3]: [responsibilities]
-  - [Member 4]: [responsibilities]
 - Repository: https://github.com/Suleman-Saleh/InfinityHackathon
 
 ## What Works
@@ -37,7 +35,7 @@ Built for **The Infinity Hack '26**.
 - Authentication/session: email + password checked against a bcrypt hash; on success the server sets a signed JWT in an httpOnly cookie (`jose`). Every API request reads the current user from that cookie only, never from a role or ID sent by the browser.
 
 ## Links
-- Live application: [live URL, coming after deployment]
+- Live application: **https://infinity-hackathon.vercel.app** (log in with any demo account below)
 - Demo video: [video URL]
 
 ## Requirements
@@ -131,10 +129,15 @@ These emails are fictional identifiers, not mailboxes. Signup, email verificatio
 **Resetting between tests:** `npm run db:reset` removes generated projects, tasks, clients and transcript runs but keeps the ten seeded users. Creating from the same transcript twice without a reset adds a second copy of the projects (clients are reused).
 
 ## Deployment Details
-- Deployment status: [Live / in progress]
-- Frontend and backend host: Vercel (one Next.js app serves both the pages and the API routes), [URL]
+- Deployment status: **Live**
+- Frontend and backend host: Vercel (one Next.js app serves both the pages and the API routes), https://infinity-hackathon.vercel.app
 - Database: Aiven PostgreSQL (free plan), SSL required
-- Deployed branch/commit: `main` @ [commit SHA]
+- Deployed branch/commit: `main` @ `07acc36`
+- Verified on the live site (7 Oct 2026):
+  - All 10 demo accounts log in; wrong password → `401`; session cookie is `Secure` + `HttpOnly`
+  - Supplied transcript → 3 projects / 12 tasks / 40 · 46 · 38 hours
+  - Changed-input test (QuickServe integration 12 h, 23 Oct) → only that task changes, QuickServe 48 h; finished in ~22 s
+  - Ayesha sees only UrbanCart; Ali sees only his 3 tasks; Hamza sees his 2 tasks across UrbanCart + QuickServe; every other project / client → `403`; non-admins → `403` on the transcript API
 
 ### How We Deployed
 1. Imported the GitHub repository into Vercel (framework preset: Next.js). Build command `npm run build` (runs `prisma generate && next build`), default output.
@@ -147,7 +150,7 @@ These emails are fictional identifiers, not mailboxes. Signup, email verificatio
 
 ## Known Limitations
 - **AI rate limits**: Groq's free tier can rate-limit. The app retries and falls back to a second model; if both are busy, it shows "The AI service is busy (rate limit reached). Please wait about a minute and try again." and saves nothing.
-- **Processing time**: creating from a transcript takes about 10–20 seconds.
+- **Processing time**: creating from a transcript takes about 10–25 seconds (about 22 s on the live site).
 - **Database connections**: Aiven's free plan allows few connections, so the app keeps its connection pool small (`connection_limit`).
 - **Duplicates**: running the same transcript twice creates the projects twice. Use `npm run db:reset` between demo runs.
 - **No editing of projects or tasks**: created projects and tasks are read-only (editing was optional in the brief). Client details can be edited.
@@ -155,7 +158,7 @@ These emails are fictional identifiers, not mailboxes. Signup, email verificatio
 
 ## Submission Summary
 - Source repository: https://github.com/Suleman-Saleh/InfinityHackathon
-- Live link or local demo video: [URL]
+- Live link: https://infinity-hackathon.vercel.app · Demo video: [video URL]
 - Setup and seed commands: documented above
 - Demo login accounts: confirmed working
 - Features completed: seeded login, role-based access, AI transcript → projects and tasks with validation and all-or-nothing save, project/task screens, My Tasks, Team Directory, Clients (CRM)
