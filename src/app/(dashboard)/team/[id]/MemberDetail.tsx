@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ArrowLeftIcon, ArrowRightIcon, BriefcaseIcon, CalendarIcon, CheckListIcon, ClockIcon, LockIcon, UsersIcon } from "@/components/icons";
 import { ProjectCard } from "@/components/ProjectCard";
-import { Avatar, Card, EmptyState, ErrorBanner, LoadingBlock, RoleBadge, StatCard } from "@/components/ui";
+import { AccessDenied, Avatar, Card, EmptyState, ErrorBanner, LoadingBlock, RoleBadge, StatCard } from "@/components/ui";
 import { ApiRequestError, api } from "@/lib/api-client";
 import { formatDate } from "@/lib/dates";
 import type { MyTaskDTO, TeamMemberDTO } from "@/types";
@@ -12,6 +12,7 @@ import type { MyTaskDTO, TeamMemberDTO } from "@/types";
 type State =
   | { status: "loading" }
   | { status: "ready"; member: TeamMemberDTO }
+  | { status: "forbidden" }
   | { status: "notFound" }
   | { status: "error"; message: string };
 
@@ -24,12 +25,15 @@ export function MemberDetail({ id }: { id: string }) {
     api<TeamMemberDTO>(`/api/users/${encodeURIComponent(id)}`)
       .then((member) => setState({ status: "ready", member }))
       .catch((err) => {
-        if (err instanceof ApiRequestError && err.status === 404) setState({ status: "notFound" });
+        if (err instanceof ApiRequestError && err.status === 403) setState({ status: "forbidden" });
+        else if (err instanceof ApiRequestError && err.status === 404) setState({ status: "notFound" });
         else setState({ status: "error", message: err instanceof Error ? err.message : "Could not load team member." });
       });
   }, [id]);
 
   if (state.status === "loading") return <LoadingBlock label="Loading team member..." />;
+  if (state.status === "forbidden")
+    return <AccessDenied what="team member" backHref="/team" backLabel="Back to Team Directory" />;
   if (state.status === "notFound")
     return (
       <EmptyState

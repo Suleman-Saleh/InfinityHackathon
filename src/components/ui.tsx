@@ -147,19 +147,20 @@ export function AccessDenied({
 }: {
   backHref: string;
   backLabel: string;
-  what?: "project" | "client";
+  what?: "project" | "client" | "team member";
 }) {
+  const reason = {
+    project: "This project isn't assigned to you. Contact your project manager if you think this is a mistake.",
+    client: "None of this client's projects are assigned to you.",
+    "team member": "Agents can only open their own profile. Other team members' work is private.",
+  }[what];
   return (
     <Card className="mx-auto flex max-w-lg flex-col items-center px-6 py-16 text-center">
       <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-50 text-red-600">
         <LockIcon className="h-6 w-6" />
       </span>
       <h2 className="text-lg font-semibold text-slate-900">You don&apos;t have access to this {what}</h2>
-      <p className="mt-1 text-sm text-slate-500">
-        {what === "project"
-          ? "This project isn't assigned to you. Contact your project manager if you think this is a mistake."
-          : "None of this client's projects are assigned to you."}
-      </p>
+      <p className="mt-1 text-sm text-slate-500">{reason}</p>
       <Link href={backHref} className={buttonClass("primary", "mt-6")}>
         {backLabel}
       </Link>

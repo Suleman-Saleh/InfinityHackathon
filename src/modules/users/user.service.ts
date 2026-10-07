@@ -1,4 +1,4 @@
-import { NotFoundError } from "@/lib/errors";
+import { ForbiddenError, NotFoundError } from "@/lib/errors";
 import { projectService } from "@/modules/projects/project.service";
 import { taskVisibilityFor } from "@/modules/tasks/task.policy";
 import { taskRepo } from "@/modules/tasks/task.repo";
@@ -25,6 +25,11 @@ export const userService = {
    * admin sees everything, a manager only their own projects, an agent only their own tasks.
    */
   async member(viewer: CurrentUser, id: string): Promise<TeamMemberDTO> {
+    // Agents may only open their own profile, never a manager's or another agent's.
+    if (viewer.role === "AGENT" && viewer.id !== id) {
+      throw new ForbiddenError("Agents can only view their own profile");
+    }
+
     const user = await userRepo.findPublicById(id);
     if (!user) throw new NotFoundError("Team member not found");
 
