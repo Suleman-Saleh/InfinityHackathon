@@ -227,7 +227,7 @@ TranscriptResultDTO { runId, model, projects: ProjectDTO[], taskCount }
 
 ### Phase 5 · Run + Test
 - [x] `npx tsc --noEmit` passes
-- [ ] `npm run build`
+- [x] `npm run build` (passes on `main` @ `db41d51`, 21 routes incl. clients + team member pages; run by Suleman)
 - [x] Seed database, log in via `curl` as each role
 - [x] Supplied transcript → 3 projects, 12 tasks, hours 40 / 46 / 38 (`npm run ai:test`)
 - [x] Changed-input test: QuickServe integration 12 h, 23 Oct → only that task changes
@@ -287,11 +287,12 @@ TranscriptResultDTO { runId, model, projects: ProjectDTO[], taskCount }
 - [x] Refresh check: data persists (new session sees the same projects/tasks)
 - [x] Logout works; visiting a page after logout → `/login`
 - [x] Merge `frontend` → `main`
-- [ ] ⚠️ Shared DB has **6 projects**: we both ran the transcript at the same time. Agree, then `npm run db:reset`
+- [x] ⚠️ Shared DB has **6 projects**: we both ran the transcript at the same time. Agree, then `npm run db:reset` (reset done by Ali)
 - [~] ⚠️ Aiven hit **"too many database connections"** during testing (free plan limit). Fixed locally with `&connection_limit=3` (Ali). **Suleman: add it to your `.env` too.** On Vercel use `&connection_limit=1`
 
 ### Phase 5 · Submission
-- [ ] Fill `README.md` from template (commands, env vars, accounts, test steps, links, limitations). Include the **demo accounts table** (removed from the login page) and the **Clients** feature
+- [x] Fill `README.md` from template (commands, env vars, accounts, test steps, links, limitations). Include the **demo accounts table** (removed from the login page) and the **Clients** feature. Still to fill: team name, members 3–4, live URL, video link
+- [x] **Team member detail page** `/team/[id]`: click a person in Team Directory to see their tasks (agent) or projects (manager). New `GET /api/users/[id]`, filtered by the viewer's access (admin all, manager own projects, agent own tasks)
 - [x] `.env.example`: `DATABASE_URL`, `GROQ_API_KEY`, `GROQ_MODEL`, `GROQ_FALLBACK_MODEL`, `SESSION_SECRET`
 - [x] Save transcript as `docs/transcript.txt` for judges
 

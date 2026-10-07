@@ -23,7 +23,8 @@ Built for **The Infinity Hack '26**.
   - **Manager**: only the projects they manage (and those projects' clients).
   - **Agent**: only their own tasks, plus the related project name and manager. Other agents' tasks are never returned.
   - Opening someone else's project directly by URL shows *"You don't have access"* (`403`).
-- **Screens**: login, dashboard with project cards and totals, project detail with task table, Create from Transcript, My Tasks (agents), Team Directory (read-only), Clients.
+- **Screens**: login, dashboard with project cards and totals, project detail with task table, Create from Transcript, My Tasks (agents), Team Directory (read-only) with a detail page per person, Clients.
+- **Team member detail**: click anyone in the Team Directory to see what they are working on (an agent's tasks, or the projects a manager runs), with tasks, hours and next deadline. It only shows work the viewer is already allowed to see: the admin sees everything, a manager sees an agent's tasks only in the manager's own projects, and an agent sees no other agent's tasks.
 - **Clients (CRM)**: client list with search, and a client detail page with contact person, email, phone, website, notes and the client's projects. Clients are created automatically from the transcript (matched by name, so re-running never duplicates them). The admin and the client's project manager can edit details; only the admin can rename.
 - **Saved records**: everything is stored in PostgreSQL and remains after a refresh.
 
