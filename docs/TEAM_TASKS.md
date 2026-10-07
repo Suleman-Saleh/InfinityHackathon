@@ -12,18 +12,39 @@
 |---|---|
 | Project setup (Next.js, Tailwind, `.gitignore`, `.env.example`) | ✅ Done |
 | Dependencies install | ✅ Done (Prisma pinned to 6.19.3) |
-| Database schema, seed, reset scripts | ✅ Written · ⬜ not run yet (no database) |
-| Auth, role-based API | ✅ Written + type-checks · ⬜ not run against a database yet |
+| Database schema, seed, reset scripts | ✅ Migrated + seeded (local Docker Postgres), seed re-run creates no duplicates |
+| Auth, role-based API | ✅ **Tested end-to-end** (login, 401/403/404, per-role project + task visibility) |
 | AI transcript conversion | ✅ **Tested with Groq: 12/12 tasks match the answer key**, changed-input test passes, rate-limit retry + fallback works |
 | Shared API types (`src/types/index.ts`) | ✅ Done |
 | Root layout + global styles | ✅ Done |
 | Frontend pages + components | ⬜ Not started |
-| Aiven database + `DATABASE_URL` | ⬜ Not created (blocks migrate, seed, API testing) |
+| Local database | ✅ Docker container `novaworks-db` on port 5434 (see below) |
+| Aiven database (for deployment) | ⬜ Not created |
 | AI models | `openai/gpt-oss-120b` primary, `openai/gpt-oss-20b` fallback (Llama 3.3 is no longer on our Groq account) |
 | Groq API key in `.env` | ✅ Added |
 | README, deployment, demo video | ⬜ Not started |
 
 **Legend:** `[x]` done · `[~]` written but not run/tested · `[ ]` to do
+
+---
+
+## Local Setup (for both)
+
+```sh
+git pull && npm install
+cp .env.example .env            # then fill in GROQ_API_KEY and SESSION_SECRET
+
+# Local Postgres in Docker (port 5434)
+docker run -d --name novaworks-db -e POSTGRES_USER=novaworks -e POSTGRES_PASSWORD=novaworks \
+  -e POSTGRES_DB=novaworks -p 5434:5432 -v novaworks-db-data:/var/lib/postgresql/data postgres:16-alpine
+# .env → DATABASE_URL="postgresql://novaworks:novaworks@localhost:5434/novaworks?schema=public"
+
+npx prisma migrate dev          # create tables
+npm run db:seed                 # 10 demo users (safe to re-run)
+npm run dev                     # http://localhost:3000
+npm run db:reset                # delete projects/tasks, keep users
+npm run ai:test                 # check AI against the answer key
+```
 
 ---
 
@@ -79,44 +100,45 @@ TranscriptResultDTO { runId, model, projects: ProjectDTO[], taskCount }
 - [x] Next.js 16 project (TypeScript, Tailwind, App Router, `src/`)
 - [x] `.gitignore` (keeps `.env` out of git) and `.env.example`
 - [x] Install `@prisma/client@6.19.3`, `prisma@6.19.3`, `bcryptjs`, `jose`, `zod`, `tsx`
-- [ ] Create Aiven Postgres, put `DATABASE_URL` in `.env`
+- [x] Local Postgres in Docker, `DATABASE_URL` in `.env`
+- [ ] Aiven Postgres for deployment
 - [x] Add Groq key to `.env` (`GROQ_API_KEY`) and a random `SESSION_SECRET`
 - [x] Prisma schema: `User`, `Project`, `Task`, `TranscriptRun` (+ `Role`, `RunStatus` enums, indexes)
-- [ ] `npx prisma migrate dev --name init`
+- [x] `npx prisma migrate dev --name init`
 - [x] Add npm scripts: `db:migrate`, `db:deploy`, `db:seed`, `db:reset`, `typecheck`, `ai:test`
-- [ ] **Checkpoint:** commit + push so Suleman can pull
+- [x] **Checkpoint:** commit + push so Suleman can pull
 
 ### Phase 2 · Seed + Auth
-- [~] `prisma/seed.ts`: upsert 10 users by email (IDs `ADMIN`, `PM01–PM03`, `DEV01–DEV06`), bcrypt hash `Demo123!`
-- [ ] Verify re-running seed creates no duplicates
-- [~] `src/modules/auth/session.ts`: JWT in httpOnly cookie, `getCurrentUser()` / `requireUser(...roles)`
-- [~] `src/modules/auth/auth.service.ts`: login with bcrypt compare
-- [~] Login / logout / me routes
+- [x] `prisma/seed.ts`: upsert 10 users by email (IDs `ADMIN`, `PM01–PM03`, `DEV01–DEV06`), bcrypt hash `Demo123!`
+- [x] Verify re-running seed creates no duplicates
+- [x] `src/modules/auth/session.ts`: JWT in httpOnly cookie, `getCurrentUser()` / `requireUser(...roles)`
+- [x] `src/modules/auth/auth.service.ts`: login with bcrypt compare
+- [x] Login / logout / me routes
 
 ### Phase 3 · Role-based API
-- [~] `GET /api/users`
-- [~] `GET /api/projects` (policy in `project.policy.ts`)
-- [~] `GET /api/projects/:id`: `403` if not visible, agents get only own tasks (`task.policy.ts`)
-- [~] `GET /api/tasks/mine`
-- [ ] **Checkpoint:** merge → `main`, tell Suleman the API is live
+- [x] `GET /api/users`
+- [x] `GET /api/projects` (policy in `project.policy.ts`)
+- [x] `GET /api/projects/:id`: `403` if not visible, agents get only own tasks (`task.policy.ts`)
+- [x] `GET /api/tasks/mine`
+- [x] **Checkpoint:** API is live on `main`
 
 ### Phase 4 · AI Transcript
 - [x] `src/lib/ai/`: `AIProvider` interface, Groq implementation, retries on rate limit (waits as told), fallback model, retry on malformed output
 - [x] `transcript.prompt.ts`: final decisions only, ignore rejected features, directory IDs only, never invent people
 - [x] `transcript.schema.ts` (zod) + `transcript.validate.ts`: readable issues for missing manager/assignee, wrong role, bad dates, hours ≤ 0, task after project deadline
-- [~] `transcript.service.ts`: admin-only, empty / too-long check, one `prisma.$transaction`, logs every run to `TranscriptRun`
-- [~] `POST /api/transcript`
-- [ ] **Checkpoint:** merge → `main`
+- [x] `transcript.service.ts`: admin-only, empty / too-long check, one `prisma.$transaction`, logs every run to `TranscriptRun`
+- [x] `POST /api/transcript` (tested: 201 with 3 projects / 12 tasks; invalid transcript → 400 with issues, nothing saved)
+- [x] **Checkpoint:** merged to `main`
 
 ### Phase 5 · Run + Test
 - [x] `npx tsc --noEmit` passes
 - [ ] `npm run build`
-- [ ] Seed database, log in via `curl` / browser as each role
+- [x] Seed database, log in via `curl` as each role
 - [x] Supplied transcript → 3 projects, 12 tasks, hours 40 / 46 / 38 (`npm run ai:test`)
 - [x] Changed-input test: QuickServe integration 12 h, 23 Oct → only that task changes
 - [x] No Kamran, no payment / inventory / maps / email tasks
-- [ ] Direct access check: Ali calling another project's `/api/projects/:id` → `403`
-- [~] `prisma/reset.ts` deletes projects/tasks/runs but keeps users (needs npm script)
+- [x] Direct access check: Ali / Ayesha calling QuickServe or HelpDeskPro → `403`; forged cookie → `401`
+- [x] `prisma/reset.ts` deletes projects/tasks/runs but keeps users (needs npm script)
 
 ---
 
