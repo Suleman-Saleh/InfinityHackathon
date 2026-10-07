@@ -1,8 +1,27 @@
 # Team Task Division
 
 **Team:** Muhammad Ali (Backend + AI) · Malik Muhammad Suleman Saleh (Frontend + Integration)
-**Stack:** Next.js (App Router) · Prisma · PostgreSQL (Aiven) · Groq · Vercel
+**Stack:** Next.js 16 (App Router) · Prisma 6 · PostgreSQL (Aiven) · Groq · Vercel
 **Build time:** 3 hours · **Architecture:** see [ARCHITECTURE.md](ARCHITECTURE.md)
+
+---
+
+## Current Status
+
+| Area | Status |
+|---|---|
+| Project setup (Next.js, Tailwind, `.gitignore`, `.env.example`) | ✅ Done |
+| Dependencies install | ⏳ In progress (slow network) |
+| Database schema, seed, reset scripts | ✅ Written · ⬜ not run yet (no database) |
+| Auth, role-based API, AI transcript conversion | ✅ Written · ⬜ not compiled / tested yet |
+| Shared API types (`src/types/index.ts`) | ✅ Done |
+| Root layout + global styles | ✅ Done |
+| Frontend pages + components | ⬜ Not started |
+| Aiven database + `DATABASE_URL` | ⬜ Not created |
+| Groq API key in `.env` | ⬜ Not added |
+| README, deployment, demo video | ⬜ Not started |
+
+**Legend:** `[x]` done · `[~]` written but not run/tested · `[ ]` to do
 
 ---
 
@@ -10,127 +29,139 @@
 
 | Area | Owner | Files / folders |
 |---|---|---|
-| Project setup, schema, seed | **Ali** | `prisma/`, `src/lib/db.ts`, `src/lib/env.ts`, `src/lib/errors.ts`, `src/lib/http.ts`, `package.json` |
+| Project setup, schema, seed | **Ali** | `prisma/`, `src/lib/db.ts`, `src/lib/env.ts`, `src/lib/errors.ts`, `src/lib/http.ts`, `src/lib/format.ts`, `package.json` |
 | Auth + sessions | **Ali** | `src/modules/auth/*`, `src/app/api/auth/*` |
 | Role-based data API | **Ali** | `src/modules/{users,projects,tasks}/*`, `src/app/api/{users,projects,tasks}/*` |
 | AI transcript conversion | **Ali** | `src/lib/ai/*`, `src/modules/transcript/*`, `src/app/api/transcript/*` |
-| Pages + UI components | **Suleman** | `src/app/(auth)/*`, `src/app/(dashboard)/*`, `src/components/*`, `src/types/*` |
-| Styling | **Suleman** | `src/app/globals.css`, Tailwind config |
-| README, `.env.example`, demo video | **Suleman** | `README.md`, `.env.example` |
+| Shared API types | **Ali** (done) | `src/types/index.ts` (frontend imports from here, don't redefine) |
+| Pages + UI components | **Suleman** | `src/app/login/*`, `src/app/(dashboard)/*`, `src/components/*`, `src/lib/api-client.ts` |
+| Styling | **Suleman** | `src/app/globals.css`, `src/app/layout.tsx` |
+| README, demo video | **Suleman** | `README.md` |
 | Deployment | **Both** | Vercel + Aiven |
 
 **Git rule:** each person works on their own branch (`backend`, `frontend`), commits small, and merges into `main` at the checkpoints below. Don't edit the other person's files without telling them.
 
 ---
 
-## API Contract (agree on this first, then work in parallel)
+## API Contract (implemented)
 
-Suleman can build every screen against this contract using mock data, then switch to the real API.
+All types live in `src/types/index.ts`. Every error response is `{ error: string, issues?: string[] }`.
 
 | Method | Route | Access | Response |
 |---|---|---|---|
-| `POST` | `/api/auth/login` | Public | `{ user }` + sets session cookie · `401 { error }` |
-| `POST` | `/api/auth/logout` | Logged in | `{ ok: true }` |
-| `GET` | `/api/auth/me` | Logged in | `{ user }` · `401` |
-| `GET` | `/api/users` | Logged in | `User[]` (no passwords) |
-| `GET` | `/api/projects` | Logged in | `Project[]` filtered by role |
-| `GET` | `/api/projects/:id` | Logged in | `Project & { tasks: Task[] }` · `403` / `404` |
-| `GET` | `/api/tasks/mine` | Agent | `(Task & { project })[]` |
-| `POST` | `/api/transcript` | Admin | `201 { projects, taskCount }` · `400 { error, issues[] }` · `403` |
+| `POST` | `/api/auth/login` | Public | body `{ email, password }` → `{ user: CurrentUser }` + session cookie · `400` / `401` |
+| `POST` | `/api/auth/logout` | Anyone | `{ ok: true }` |
+| `GET` | `/api/auth/me` | Logged in | `{ user: CurrentUser }` · `401` |
+| `GET` | `/api/users` | Logged in | `UserDTO[]` (no passwords) |
+| `GET` | `/api/projects` | Logged in | `ProjectDTO[]` filtered by role (agents get their own task count/hours) |
+| `GET` | `/api/projects/:id` | Logged in | `ProjectDetailDTO` (agents get only their own tasks) · `403` / `404` |
+| `GET` | `/api/tasks/mine` | Agent | `MyTaskDTO[]` (task + project name, client, manager) · `403` for non-agents |
+| `POST` | `/api/transcript` | Admin | body `{ transcript }` → `201 TranscriptResultDTO` · `400 { error, issues[] }` · `403` · `502` (AI unavailable) |
 
 **Shapes**
 ```ts
-User    { id, name, email, role: "ADMIN"|"MANAGER"|"AGENT", specialization, skills: string[] }
-Project { id, name, clientName, description, deadline, manager: { id, name } , taskCount, totalHours }
-Task    { id, projectId, title, description, deadline, estimatedHours, assignee: { id, name } }
+CurrentUser       { id, name, email, role: "ADMIN" | "MANAGER" | "AGENT" }
+UserDTO           { id, name, email, role, specialization, skills: string[] }
+ProjectDTO        { id, name, clientName, description, deadline: "YYYY-MM-DD", manager: { id, name }, taskCount, totalHours }
+TaskDTO           { id, projectId, title, description, deadline: "YYYY-MM-DD", estimatedHours, assignee: { id, name } }
+ProjectDetailDTO  ProjectDTO & { tasks: TaskDTO[] }
+MyTaskDTO         TaskDTO & { project: { id, name, clientName, manager: { id, name } } }
+TranscriptResultDTO { runId, model, projects: ProjectDTO[], taskCount }
 ```
 
 ---
 
 ## Muhammad Ali — Backend + AI
 
-### Phase 1 · Setup (0:00 – 0:20)
-- [ ] `npx create-next-app` (TypeScript, Tailwind, App Router), push to `main`
-- [ ] Install `prisma`, `@prisma/client`, `bcryptjs`, `jose` (JWT), `zod`
+### Phase 1 · Setup
+- [x] Next.js 16 project (TypeScript, Tailwind, App Router, `src/`)
+- [x] `.gitignore` (keeps `.env` out of git) and `.env.example`
+- [~] Install `@prisma/client@6`, `prisma@6`, `bcryptjs`, `jose`, `zod`, `tsx`, still running
 - [ ] Create Aiven Postgres, put `DATABASE_URL` in `.env`
-- [ ] Write Prisma schema: `User`, `Project`, `Task` (+ `Role` enum)
-- [ ] `npx prisma migrate dev`
-- [ ] **Checkpoint:** push so Suleman can pull the skeleton
+- [ ] Add Groq key to `.env` (`GROQ_API_KEY`) and a random `SESSION_SECRET`
+- [x] Prisma schema: `User`, `Project`, `Task`, `TranscriptRun` (+ `Role`, `RunStatus` enums, indexes)
+- [ ] `npx prisma migrate dev --name init`
+- [ ] Add npm scripts: `db:seed`, `db:reset`, `prisma.seed` config
+- [ ] **Checkpoint:** commit + push so Suleman can pull
 
-### Phase 2 · Seed + Auth (0:20 – 0:45)
-- [ ] `prisma/seed.ts`: upsert 10 users by email (IDs `ADMIN`, `PM01–PM03`, `DEV01–DEV06`), bcrypt hash `Demo123!`
+### Phase 2 · Seed + Auth
+- [~] `prisma/seed.ts`: upsert 10 users by email (IDs `ADMIN`, `PM01–PM03`, `DEV01–DEV06`), bcrypt hash `Demo123!`
 - [ ] Verify re-running seed creates no duplicates
-- [ ] `src/modules/auth/session.ts`: sign/verify JWT in httpOnly cookie, `getCurrentUser()` from cookie only
-- [ ] Login / logout / me routes
+- [~] `src/modules/auth/session.ts`: JWT in httpOnly cookie, `getCurrentUser()` / `requireUser(...roles)`
+- [~] `src/modules/auth/auth.service.ts`: login with bcrypt compare
+- [~] Login / logout / me routes
 
-### Phase 3 · Role-based API (0:45 – 1:05)
-- [ ] `GET /api/users`
-- [ ] `GET /api/projects` — ADMIN all · MANAGER `managerId = me` · AGENT projects containing my tasks
-- [ ] `GET /api/projects/:id` — `403` if not in my project list; AGENT receives only own tasks
-- [ ] `GET /api/tasks/mine`
-- [ ] **Checkpoint:** merge `backend` → `main`, tell Suleman API is live
+### Phase 3 · Role-based API
+- [~] `GET /api/users`
+- [~] `GET /api/projects` (policy in `project.policy.ts`)
+- [~] `GET /api/projects/:id`: `403` if not visible, agents get only own tasks (`task.policy.ts`)
+- [~] `GET /api/tasks/mine`
+- [ ] **Checkpoint:** merge → `main`, tell Suleman the API is live
 
-### Phase 4 · AI Transcript (1:05 – 1:50)
-- [ ] `src/lib/ai/groq.ts` (behind `AIProvider` interface): call Groq (`https://api.groq.com/openai/v1`) with transcript + directory (id, name, role, skills — **no passwords**), request JSON output
-- [ ] Prompt rules: use **final** decisions, ignore rejected features, only existing IDs, never invent people, dates `YYYY-MM-DD` in 2026
-- [ ] Backup Groq model (`GROQ_FALLBACK_MODEL`) if the first fails / rate-limits
-- [ ] `src/modules/transcript/transcript.schema.ts` + `transcript.validate.ts` (zod): required fields, manager is MANAGER, assignee is AGENT, hours > 0, task deadline ≤ project deadline
-- [ ] `POST /api/transcript`: admin-only, reject empty, validate, save in **one `prisma.$transaction`**, return summary or `issues[]`
+### Phase 4 · AI Transcript
+- [~] `src/lib/ai/`: `AIProvider` interface, Groq implementation, automatic fallback model
+- [~] `transcript.prompt.ts`: final decisions only, ignore rejected features, directory IDs only, never invent people
+- [~] `transcript.schema.ts` (zod) + `transcript.validate.ts`: readable issues for missing manager/assignee, wrong role, bad dates, hours ≤ 0, task after project deadline
+- [~] `transcript.service.ts`: admin-only, empty / too-long check, one `prisma.$transaction`, logs every run to `TranscriptRun`
+- [~] `POST /api/transcript`
 - [ ] **Checkpoint:** merge → `main`
 
-### Phase 5 · Testing (1:50 – 2:20)
+### Phase 5 · Run + Test
+- [ ] `npx tsc --noEmit` and `npm run build`: fix any type errors
+- [ ] Seed database, log in via `curl` / browser as each role
 - [ ] Supplied transcript → 3 projects, 12 tasks, hours 40 / 46 / 38
 - [ ] Changed-input test: QuickServe integration 12 h, 23 Oct → only that task changes
 - [ ] No Kamran, no payment / inventory / maps / email tasks
 - [ ] Direct access check: Ali calling another project's `/api/projects/:id` → `403`
-- [ ] Add a `npm run reset` script that deletes projects/tasks but keeps users
+- [~] `prisma/reset.ts` deletes projects/tasks/runs but keeps users (needs npm script)
 
 ---
 
 ## Malik Muhammad Suleman Saleh — Frontend + Integration
 
-### Phase 1 · Layout + Login (0:00 – 0:30)
-- [ ] Pull skeleton once Ali pushes; create `frontend` branch
-- [ ] App shell: navbar with user name, role badge, logout button
-- [ ] `/login` page: email + password, error message on bad login, redirect by role
-- [ ] `src/lib/mock.ts` with sample data matching the API contract
+> The backend is already written, so **no mock data is needed**. Build directly against the real API once the database is seeded. Import all types from `@/types`.
+> Note: the default `src/app/page.tsx` was removed; the home page needs to be created.
 
-### Phase 2 · Core Screens (0:30 – 1:10)
-- [ ] `/` home — redirects per role
-- [ ] **Admin dashboard** — project cards (name, client, manager, deadline, task count, hours) + **Create from Transcript** button
-- [ ] **Project detail** `/projects/[id]` — client, manager, deadline, description, task table (title, description, assignee, deadline, hours)
-- [ ] **Team directory** `/team` — read-only list of names, roles, specializations
-- [ ] **Manager home** — same cards, only their projects
+### Phase 1 · Layout + Login
+- [ ] Pull `main`, create `frontend` branch
+- [ ] `src/lib/api-client.ts`: `api<T>(path, { method, body })` that throws an error with `status` and `issues[]`
+- [ ] App shell (`src/app/(dashboard)/layout.tsx`): calls `/api/auth/me`, redirects to `/login` on `401`; navbar with name, role badge, role-based links, logout
+- [ ] `/login` page: email + password, error message on bad login, redirect by role; show demo accounts list for convenience
 
-### Phase 3 · Transcript + Agent Screens (1:10 – 1:50)
-- [ ] `/transcript` page (admin only): large textarea, **Create** button
-  - [ ] Disable button + spinner while processing
-  - [ ] Success: show created projects + task counts, link to each
-  - [ ] Error: show message + `issues[]` list, keep transcript so admin can fix and retry
-- [ ] **Agent "My Tasks"** `/my-tasks` — task cards grouped by project (project name + manager visible)
-- [ ] Empty states ("No projects yet — create from transcript")
+### Phase 2 · Core Screens
+- [ ] `/` home: admin/manager → project cards; agent → redirect to `/my-tasks`
+- [ ] **Project cards**: name, client, manager, deadline, task count, total hours; admin sees **Create from Transcript** button
+- [ ] **Project detail** `/projects/[id]`: client, manager, deadline, description, task table (title, description, assignee, deadline, hours); `403` → "You don't have access" message
+- [ ] **Team directory** `/team`: read-only list of names, roles, specializations, skills
 
-### Phase 4 · Integration (1:50 – 2:20)
-- [ ] Replace mock data with real API calls
-- [ ] Handle `401` → redirect to login, `403` → "Not allowed" page
+### Phase 3 · Transcript + Agent Screens
+- [ ] `/transcript` page (admin only): large textarea + **Create from Transcript** button
+  - [ ] Disable button + spinner while processing (can take 5–20 s)
+  - [ ] Success: created projects + task counts, link to each
+  - [ ] Error: show `error` + `issues[]` list, keep the transcript so admin can fix and retry
+- [ ] **Agent "My Tasks"** `/my-tasks`: tasks grouped by project (project name + manager visible)
+- [ ] Empty states ("No projects yet. Create from a transcript")
+
+### Phase 4 · Integration Testing
 - [ ] Test as Admin, Ayesha (only UrbanCart), Ali (3 tasks), Hamza (2 tasks across 2 projects)
-- [ ] Refresh check — data persists
+- [ ] Refresh check: data persists
+- [ ] Logout works; visiting a page after logout → login
 
-### Phase 5 · Submission (2:20 – 2:45)
+### Phase 5 · Submission
 - [ ] Fill `README.md` from template (commands, env vars, accounts, test steps, links, limitations)
-- [ ] `.env.example`: `DATABASE_URL`, `GROQ_API_KEY`, `GROQ_MODEL`, `GROQ_FALLBACK_MODEL`, `SESSION_SECRET`
+- [x] `.env.example`: `DATABASE_URL`, `GROQ_API_KEY`, `GROQ_MODEL`, `GROQ_FALLBACK_MODEL`, `SESSION_SECRET`
 - [ ] Save transcript as `docs/transcript.txt` for judges
 
 ---
 
 ## Together
 
-| Time | Task |
+| Step | Task |
 |---|---|
-| 0:00 – 0:05 | Read this file, agree on API contract |
-| 1:05 | Sync: Suleman starts using real API |
-| 2:20 – 2:45 | Deploy: Vercel project, env vars, `prisma migrate deploy`, seed hosted DB, test live |
-| 2:45 – 3:00 | Record demo video, rehearse demo, final push |
+| Now | Ali: finish install, create Aiven DB, add keys, migrate + seed, compile, push · Suleman: start pages |
+| After push | Suleman builds against the live local API |
+| Deploy | Vercel project, env vars, `prisma migrate deploy`, seed hosted DB, test live |
+| Final | Record demo video, rehearse demo, final push |
 
 ### Demo script (both should know it)
 1. Show seed / no signup → 2. Admin login, paste transcript, create → 3. Open UrbanCart → 4. Ayesha sees only UrbanCart → 5. Ali sees 3 tasks, blocked from others → 6. Hamza sees 2 tasks across projects → 7. Refresh → 8. Modified transcript
