@@ -39,12 +39,24 @@ Hi Suleman, great work on the frontend: I reviewed it (type-check, lint, product
 4. **Aiven connection fix:** the free plan ran out of connection slots, so `DATABASE_URL` now ends with `&connection_limit=3`.
 
 **What I need from you**
-- [ ] `git pull`, then `npm install` (runs `prisma generate` so the new `Client` type exists)
-- [ ] Add `&connection_limit=3` to the end of `DATABASE_URL` in your `.env`, otherwise your dev server blocks mine
-- [ ] Stop dev servers / Prisma Studio you're not using (each one holds database connections)
-- [ ] Reply OK so we can run `npm run db:reset` together. It clears your 6 duplicate projects + test clients. I'll run it, you don't need to.
-- [ ] README: include the **10 demo accounts table** (login page no longer shows them), the **Clients** feature, and `connection_limit` in the env-var notes
-- [ ] Have a quick look at the Clients pages and tell me if anything looks off with your design
+- [x] `git pull`, then `npm install` (runs `prisma generate` so the new `Client` type exists)
+- [x] Add `&connection_limit=3` to the end of `DATABASE_URL` in your `.env`, otherwise your dev server blocks mine
+- [x] Stop dev servers / Prisma Studio you're not using (each one holds database connections). Only one dev server running, no Prisma Studio
+- [x] Reply OK so we can run `npm run db:reset` together. It clears your 6 duplicate projects + test clients. I'll run it, you don't need to. **→ Suleman: OK, go ahead and reset.**
+- [x] README: include the **10 demo accounts table** (login page no longer shows them), the **Clients** feature, and `connection_limit` in the env-var notes. Live URL, video link, team name and members 3–4 are still placeholders
+- [x] Have a quick look at the Clients pages and tell me if anything looks off with your design (see reply below)
+
+### 💬 Reply from Suleman
+
+**OK for `db:reset`**, go ahead.
+
+**Clients pages review:** they match the design system well (same cards, stat row, empty state, access-denied screen, colours). Small, optional points:
+1. Client detail, agent view: the stat says **"Estimate"**, but for agents it only counts their own tasks. Project detail says **"Your estimate"** for agents, so maybe use the same label here.
+2. Client detail: the 4 stat cards sit next to the 340px contact card, so on a normal laptop screen each card is narrow and "Next deadline / 20 Oct 2026" may wrap. Consider `xl:grid-cols-2` there, or moving the stats above the two columns.
+3. Agents can see the client's full contact details and notes. Fine for the demo, just confirm that's intended.
+4. "Last updated" uses the browser's locale format (e.g. 10/7/2026), while every other date uses "7 Oct 2026". Could use `formatDate` for consistency.
+
+None of these block the demo.
 
 **What I'm doing next:** reset the DB (after your OK) → deploy to Vercel (`connection_limit=1` there) → live test → send you the live URL for the README.
 
