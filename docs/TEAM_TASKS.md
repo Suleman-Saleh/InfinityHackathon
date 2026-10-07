@@ -19,12 +19,28 @@
 | Root layout + global styles | ✅ Done |
 | Frontend pages + components | ⬜ Not started |
 | Local database | ✅ Docker container `novaworks-db` on port 5434 (see below) |
-| Aiven database (for deployment) | ⬜ Not created |
+| Aiven database (for deployment) | 📨 Suleman invited to the Aiven project (see **Note for Suleman** below) |
 | AI models | `openai/gpt-oss-120b` primary, `openai/gpt-oss-20b` fallback (Llama 3.3 is no longer on our Groq account) |
 | Groq API key in `.env` | ✅ Added |
 | README, deployment, demo video | ⬜ Not started |
 
 **Legend:** `[x]` done · `[~]` written but not run/tested · `[ ]` to do
+
+---
+
+## 📨 Note for Suleman: Aiven Access
+
+Ali has sent you an **invite to our Aiven project** by email.
+
+1. Open the email from Aiven and **accept the invite** (create an account with that email if you don't have one).
+2. In the Aiven Console, open our project → the **PostgreSQL** service.
+3. You can see the **Service URI** there (`postgres://avnadmin:...@...aivencloud.com:PORT/defaultdb?sslmode=require`). You'll need it for deployment (Vercel env var `DATABASE_URL`).
+
+**Rules for the shared Aiven database**
+- 🔒 Never commit the Service URI or paste it in group chats / screenshots. It only goes in your local `.env` or Vercel env vars.
+- 🧪 **Don't use Aiven for day-to-day development.** Use your own local Docker database (see *Local Setup* above) so we don't overwrite each other's test data.
+- ⚠️ Only **one person** runs `npx prisma migrate deploy`, `npm run db:seed` or `npm run db:reset` against Aiven, and tell the other first. `db:reset` deletes all projects and tasks.
+- Aiven is for the **live deployment and the demo** only.
 
 ---
 
@@ -101,7 +117,8 @@ TranscriptResultDTO { runId, model, projects: ProjectDTO[], taskCount }
 - [x] `.gitignore` (keeps `.env` out of git) and `.env.example`
 - [x] Install `@prisma/client@6.19.3`, `prisma@6.19.3`, `bcryptjs`, `jose`, `zod`, `tsx`
 - [x] Local Postgres in Docker, `DATABASE_URL` in `.env`
-- [ ] Aiven Postgres for deployment
+- [x] Invite Suleman to the Aiven project
+- [ ] Aiven Postgres: run `migrate deploy` + `db:seed` once before deployment
 - [x] Add Groq key to `.env` (`GROQ_API_KEY`) and a random `SESSION_SECRET`
 - [x] Prisma schema: `User`, `Project`, `Task`, `TranscriptRun` (+ `Role`, `RunStatus` enums, indexes)
 - [x] `npx prisma migrate dev --name init`
@@ -183,7 +200,7 @@ TranscriptResultDTO { runId, model, projects: ProjectDTO[], taskCount }
 
 | Step | Task |
 |---|---|
-| Now | Ali: finish install, create Aiven DB, add keys, migrate + seed, compile, push · Suleman: start pages |
+| Now | Ali: backend done and tested · Suleman: accept the Aiven invite, set up local DB, start pages |
 | After push | Suleman builds against the live local API |
 | Deploy | Vercel project, env vars, `prisma migrate deploy`, seed hosted DB, test live |
 | Final | Record demo video, rehearse demo, final push |
