@@ -1,0 +1,44 @@
+# NovaWorks AI Project Manager - Requirements
+#
+# This is a Node.js project. Install packages with:
+#     npm install
+# (npm reads package.json / package-lock.json; this file is a human-readable summary.)
+
+# ---------------------------------------------------------------
+# System requirements
+# ---------------------------------------------------------------
+node>=20.9            # tested on Node 26
+npm>=10
+postgresql>=14        # hosted (Aiven) or local; connection via DATABASE_URL
+groq-api-key          # free key from https://console.groq.com
+
+# ---------------------------------------------------------------
+# Runtime dependencies
+# ---------------------------------------------------------------
+next==16.4.0          # React framework (UI + API routes)
+react==19.3.0
+react-dom==19.3.0
+@prisma/client==6.19.3  # database client
+bcryptjs==3.0.3       # password hashing
+jose==6.2.12          # signed JWT session cookies
+zod==4.6.5            # validation (env vars, AI output)
+
+# ---------------------------------------------------------------
+# Development dependencies
+# ---------------------------------------------------------------
+prisma==6.19.3        # schema, migrations, seed
+typescript==5.9.3
+tsx==4.23.15          # runs seed / reset / ai:test scripts
+tailwindcss==4.3.3
+@tailwindcss/turbopack==4.3.3
+eslint==9.39.5
+eslint-config-next==16.4.0
+@types/node==20.19.43
+@types/react==19.3.0
+@types/react-dom==19.3.0
+@types/bcryptjs==2.4.6
+
+# ---------------------------------------------------------------
+# Environment variables (see .env.example)
+# ---------------------------------------------------------------
+# DATABASE_URL, GROQ_API_KEY, GROQ_MODEL, GROQ_FALLBACK_MODEL, SESSION_SECRET
