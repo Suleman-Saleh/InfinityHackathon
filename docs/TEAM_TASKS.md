@@ -12,14 +12,13 @@
 |---|---|
 | Project setup (Next.js, Tailwind, `.gitignore`, `.env.example`) | ✅ Done |
 | Dependencies install | ✅ Done (Prisma pinned to 6.19.3) |
-| Database schema, seed, reset scripts | ✅ Migrated + seeded (local Docker Postgres), seed re-run creates no duplicates |
+| Database schema, seed, reset scripts | ✅ Migrated + seeded on Aiven, seed re-run creates no duplicates |
 | Auth, role-based API | ✅ **Tested end-to-end** (login, 401/403/404, per-role project + task visibility) |
 | AI transcript conversion | ✅ **Tested with Groq: 12/12 tasks match the answer key**, changed-input test passes, rate-limit retry + fallback works |
 | Shared API types (`src/types/index.ts`) | ✅ Done |
 | Root layout + global styles | ✅ Done |
 | Frontend pages + components | ⬜ Not started |
-| Local database | ✅ Docker container `novaworks-db` on port 5434 (see below) |
-| Aiven database (for deployment) | 📨 Ali shares the connection string privately with Suleman (see **Note for Suleman** below) |
+| Database | ✅ **Shared Aiven Postgres**, migrated + seeded (10 users). Both of us use it (see **Note for Suleman**) |
 | AI models | `openai/gpt-oss-120b` primary, `openai/gpt-oss-20b` fallback (Llama 3.3 is no longer on our Groq account) |
 | Groq API key in `.env` | ✅ Added |
 | README, deployment, demo video | ⬜ Not started |
@@ -28,40 +27,37 @@
 
 ---
 
-## 📨 Note for Suleman: Aiven Access
+## 📨 Note for Suleman: We Both Use Aiven
 
-The Aiven invite email didn't arrive, so **Ali will send you the Aiven connection string (Service URI) privately**.
+We now use **one shared Aiven cloud database** for development and the demo, so we both see the same data. Docker is no longer needed.
 
-1. Copy it exactly as text (not from a screenshot).
-2. Save it somewhere private. For deployment it goes into Vercel's env var `DATABASE_URL`. Only put it in your local `.env` if you need to run a command against Aiven (and switch back to your local Docker URL afterwards).
-3. Delete the chat message once saved.
-4. If the string ever leaks, tell Ali so he can reset the password in the Aiven Console (service → **Users**).
+The Aiven database is **already migrated and seeded** (10 demo users, 0 projects). You do **not** need to run migrate or seed.
 
-**Rules for the shared Aiven database**
-- 🔒 Never commit the Service URI or paste it in group chats / screenshots. It only goes in your local `.env` or Vercel env vars.
-- 🧪 **Don't use Aiven for day-to-day development.** Use your own local Docker database (see *Local Setup* above) so we don't overwrite each other's test data.
-- ⚠️ Only **one person** runs `npx prisma migrate deploy`, `npm run db:seed` or `npm run db:reset` against Aiven, and tell the other first. `db:reset` deletes all projects and tasks.
-- Aiven is for the **live deployment and the demo** only.
+1. Ali sends you the Aiven connection string **privately**. Copy it as text, not from a screenshot, and delete the chat message after saving.
+2. Put it in your `.env` as `DATABASE_URL="postgres://avnadmin:...@pg-...aivencloud.com:16751/defaultdb?sslmode=require"`
+3. Never commit it or post it in group chats. `.env` is already in `.gitignore`.
+
+**Rules for the shared database**
+- ⚠️ **`npm run db:reset` deletes ALL projects and tasks for both of us.** Message the other person before running it.
+- 🧪 Each "Create from Transcript" adds 3 more projects. Run `db:reset` (after telling each other) before creating again, so there are no duplicates.
+- 🗂️ Schema changes (`prisma/schema.prisma`) are **Ali's only**. Ali runs `npx prisma migrate dev` and pushes the migration. You just `git pull` and run `npx prisma generate`.
+- 🎬 Before the demo: reset once, so judges see the transcript create the projects live.
+- 🛟 If Aiven is down: `docker start novaworks-db` (Ali's machine) and use the local URL commented in `.env`.
 
 ---
 
 ## Local Setup (for both)
 
 ```sh
-git pull && npm install
-cp .env.example .env            # then fill in GROQ_API_KEY and SESSION_SECRET
-
-# Local Postgres in Docker (port 5434)
-docker run -d --name novaworks-db -e POSTGRES_USER=novaworks -e POSTGRES_PASSWORD=novaworks \
-  -e POSTGRES_DB=novaworks -p 5434:5432 -v novaworks-db-data:/var/lib/postgresql/data postgres:16-alpine
-# .env → DATABASE_URL="postgresql://novaworks:novaworks@localhost:5434/novaworks?schema=public"
-
-npx prisma migrate dev          # create tables
-npm run db:seed                 # 10 demo users (safe to re-run)
+git pull && npm install         # npm install also runs `prisma generate`
+cp .env.example .env            # fill in DATABASE_URL (Aiven, from Ali), GROQ_API_KEY, SESSION_SECRET
 npm run dev                     # http://localhost:3000
-npm run db:reset                # delete projects/tasks, keep users
-npm run ai:test                 # check AI against the answer key
+
+npm run db:reset                # ⚠️ deletes projects/tasks for everyone, tell the other person first
+npm run ai:test                 # check AI against the answer key (doesn't touch the database)
 ```
+
+Demo login: `admin@novaworks.example` / `Demo123!` (all 10 accounts in the README template).
 
 ---
 
@@ -117,9 +113,9 @@ TranscriptResultDTO { runId, model, projects: ProjectDTO[], taskCount }
 - [x] Next.js 16 project (TypeScript, Tailwind, App Router, `src/`)
 - [x] `.gitignore` (keeps `.env` out of git) and `.env.example`
 - [x] Install `@prisma/client@6.19.3`, `prisma@6.19.3`, `bcryptjs`, `jose`, `zod`, `tsx`
-- [x] Local Postgres in Docker, `DATABASE_URL` in `.env`
-- [x] Share Aiven connection string privately with Suleman (invite email didn't arrive)
-- [ ] Aiven Postgres: run `migrate deploy` + `db:seed` once before deployment
+- [x] Local Postgres in Docker for first tests (now replaced by Aiven)
+- [x] Aiven Postgres: `migrate deploy` + `db:seed` done; app tested against Aiven
+- [x] Share Aiven connection string privately with Suleman
 - [x] Add Groq key to `.env` (`GROQ_API_KEY`) and a random `SESSION_SECRET`
 - [x] Prisma schema: `User`, `Project`, `Task`, `TranscriptRun` (+ `Role`, `RunStatus` enums, indexes)
 - [x] `npx prisma migrate dev --name init`
@@ -201,9 +197,9 @@ TranscriptResultDTO { runId, model, projects: ProjectDTO[], taskCount }
 
 | Step | Task |
 |---|---|
-| Now | Ali: backend done and tested · Suleman: save the Aiven string Ali sends, set up local DB, start pages |
+| Now | Ali: backend done and tested · Suleman: put the Aiven string in `.env`, run `npm run dev`, start pages |
 | After push | Suleman builds against the live local API |
-| Deploy | Vercel project, env vars, `prisma migrate deploy`, seed hosted DB, test live |
+| Deploy | Vercel project + env vars (Aiven already migrated + seeded), `db:reset` before demo, test live |
 | Final | Record demo video, rehearse demo, final push |
 
 ### Demo script (both should know it)
