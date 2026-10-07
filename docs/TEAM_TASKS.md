@@ -295,7 +295,7 @@ TranscriptResultDTO { runId, model, projects: ProjectDTO[], taskCount }
 
 ### Phase 5 · Submission
 - [x] Fill `README.md` from template (commands, env vars, accounts, test steps, links, limitations). Include the **demo accounts table** (removed from the login page) and the **Clients** feature. Still to fill: team name, members 3–4, live URL, video link
-- [x] **Team member detail page** `/team/[id]`: click a person in Team Directory to see their tasks (agent) or projects (manager). New `GET /api/users/[id]`, filtered by the viewer's access (admin all, manager own projects); agents can only open their own profile, others → `403`
+- [x] **Team member detail page** `/team/[id]`: click a person in Team Directory to see their tasks (agent) or projects (manager). New `GET /api/users/[id]`, filtered by the viewer's access: admin opens everyone; a manager opens themselves + agents on their projects; an agent only themselves; anyone else → `403` (cards not clickable)
 - [x] `.env.example`: `DATABASE_URL`, `GROQ_API_KEY`, `GROQ_MODEL`, `GROQ_FALLBACK_MODEL`, `SESSION_SECRET`
 - [x] Save transcript as `docs/transcript.txt` for judges
 

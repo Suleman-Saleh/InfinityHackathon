@@ -17,10 +17,12 @@ type Filter = (typeof FILTERS)[number]["key"];
 
 const ROLE_ORDER = { ADMIN: 0, MANAGER: 1, AGENT: 2 };
 
-// Agents can only open their own profile; the API enforces the same rule.
-const canOpen = (viewer: { id: string; role: Role }, member: UserDTO) => viewer.role !== "AGENT" || member.id === viewer.id;
-
-export function TeamDirectory({ viewer }: { viewer: { id: string; role: Role } }) {
+/**
+ * openableIds: whose profiles this viewer may open (null = everyone, for the admin).
+ * Managers: themselves + agents on their projects. Agents: only themselves. The API enforces the same rule.
+ */
+export function TeamDirectory({ viewer, openableIds }: { viewer: { id: string; role: Role }; openableIds: string[] | null }) {
+  const canOpen = (member: UserDTO) => openableIds === null || openableIds.includes(member.id);
   const [users, setUsers] = useState<UserDTO[] | null>(null);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState<Filter>("ALL");
@@ -65,7 +67,7 @@ export function TeamDirectory({ viewer }: { viewer: { id: string; role: Role } }
 
       <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
         {shown.map((u) =>
-          canOpen(viewer, u) ? (
+          canOpen(u) ? (
             <Link key={u.id} href={`/team/${u.id}`} className="group block focus-visible:outline-none">
               <MemberCard
                 member={u}

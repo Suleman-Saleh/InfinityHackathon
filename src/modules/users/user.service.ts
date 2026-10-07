@@ -25,9 +25,13 @@ export const userService = {
    * admin sees everything, a manager only their own projects, an agent only their own tasks.
    */
   async member(viewer: CurrentUser, id: string): Promise<TeamMemberDTO> {
-    // Agents may only open their own profile, never a manager's or another agent's.
-    if (viewer.role === "AGENT" && viewer.id !== id) {
-      throw new ForbiddenError("Agents can only view their own profile");
+    const openable = await userService.openableMemberIds(viewer);
+    if (openable !== "ALL" && !openable.includes(id)) {
+      throw new ForbiddenError(
+        viewer.role === "MANAGER"
+          ? "Managers can only view their own profile and the agents working on their projects"
+          : "Agents can only view their own profile",
+      );
     }
 
     const user = await userRepo.findPublicById(id);
@@ -45,5 +49,15 @@ export const userService = {
         : [];
 
     return { user, projects, tasks, limited: viewer.role !== "ADMIN" && viewer.id !== user.id };
+  },
+
+  /**
+   * Whose team profile a user may open: the admin anyone; a manager themselves and the agents
+   * with tasks in their projects; an agent only themselves.
+   */
+  async openableMemberIds(viewer: CurrentUser): Promise<string[] | "ALL"> {
+    if (viewer.role === "ADMIN") return "ALL";
+    if (viewer.role === "AGENT") return [viewer.id];
+    return [viewer.id, ...(await taskRepo.assigneeIdsForManager(viewer.id))];
   },
 };

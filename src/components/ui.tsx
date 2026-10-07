@@ -152,7 +152,7 @@ export function AccessDenied({
   const reason = {
     project: "This project isn't assigned to you. Contact your project manager if you think this is a mistake.",
     client: "None of this client's projects are assigned to you.",
-    "team member": "Agents can only open their own profile. Other team members' work is private.",
+    "team member": "You can open your own profile and, as a manager, the agents working on your projects. Other people's work is private.",
   }[what];
   return (
     <Card className="mx-auto flex max-w-lg flex-col items-center px-6 py-16 text-center">
