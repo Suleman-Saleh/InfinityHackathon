@@ -108,19 +108,19 @@ export function ClientDetail({ id, role }: { id: string; role: Role }) {
         )}
       </Card>
 
+      <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard label={isAgent ? "Your projects" : "Projects"} value={client.projectCount} icon={<BriefcaseIcon className="h-5 w-5" />} />
+        <StatCard label={isAgent ? "Your tasks" : "Tasks"} value={client.taskCount} icon={<CheckListIcon className="h-5 w-5" />} />
+        <StatCard label={isAgent ? "Your estimate" : "Estimate"} value={`${client.totalHours} hrs`} icon={<ClockIcon className="h-5 w-5" />} />
+        <StatCard
+          label="Next deadline"
+          value={client.nextDeadline ? formatDate(client.nextDeadline) : "-"}
+          icon={<CalendarIcon className="h-5 w-5" />}
+        />
+      </div>
+
       <div className="mb-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="min-w-0 space-y-6">
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <StatCard label={isAgent ? "Your projects" : "Projects"} value={client.projectCount} icon={<BriefcaseIcon className="h-5 w-5" />} />
-            <StatCard label={isAgent ? "Your tasks" : "Tasks"} value={client.taskCount} icon={<CheckListIcon className="h-5 w-5" />} />
-            <StatCard label="Estimate" value={`${client.totalHours} hrs`} icon={<ClockIcon className="h-5 w-5" />} />
-            <StatCard
-              label="Next deadline"
-              value={client.nextDeadline ? formatDate(client.nextDeadline) : "-"}
-              icon={<CalendarIcon className="h-5 w-5" />}
-            />
-          </div>
-
           <div>
             <h2 className="mb-4 text-lg font-semibold text-slate-900">{isAgent ? "Projects you work on" : "Projects"}</h2>
             {client.projects.length > 0 ? (
@@ -147,7 +147,7 @@ export function ClientDetail({ id, role }: { id: string; role: Role }) {
             }}
           />
         ) : (
-          <ContactCard client={client} />
+          <ContactCard client={client} showNotes={!isAgent} />
         )}
       </div>
     </>
@@ -168,7 +168,7 @@ function ContactRow({ icon, label, children }: { icon: React.ReactNode; label: s
 
 const missing = <span className="text-slate-400">Not set</span>;
 
-function ContactCard({ client }: { client: ClientDetailDTO }) {
+function ContactCard({ client, showNotes }: { client: ClientDetailDTO; showNotes: boolean }) {
   const website = client.website && (/^https?:\/\//i.test(client.website) ? client.website : `https://${client.website}`);
   return (
     <Card className="h-fit p-5">
@@ -205,11 +205,13 @@ function ContactCard({ client }: { client: ClientDetailDTO }) {
           )}
         </ContactRow>
       </div>
-      <div className="mt-5 border-t border-slate-100 pt-4">
-        <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500">Notes</p>
-        <p className="whitespace-pre-wrap text-sm text-slate-700">{client.notes || <span className="text-slate-400">No notes yet</span>}</p>
-      </div>
-      <p className="mt-4 text-xs text-slate-400">Last updated {new Date(client.updatedAt).toLocaleString()}</p>
+      {showNotes && (
+        <div className="mt-5 border-t border-slate-100 pt-4">
+          <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500">Notes</p>
+          <p className="whitespace-pre-wrap text-sm text-slate-700">{client.notes || <span className="text-slate-400">No notes yet</span>}</p>
+        </div>
+      )}
+      <p className="mt-4 text-xs text-slate-400">Last updated {formatDate(client.updatedAt.slice(0, 10))}</p>
     </Card>
   );
 }

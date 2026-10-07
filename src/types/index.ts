@@ -54,7 +54,7 @@ export type ClientContact = {
   contactEmail: string;
   contactPhone: string;
   website: string;
-  notes: string;
+  notes: string; // always "" for agents
 };
 
 export type ClientDTO = ClientContact & {

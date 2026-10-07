@@ -42,7 +42,7 @@ Hi Suleman, great work on the frontend: I reviewed it (type-check, lint, product
 - [x] `git pull`, then `npm install` (runs `prisma generate` so the new `Client` type exists)
 - [x] Add `&connection_limit=3` to the end of `DATABASE_URL` in your `.env`, otherwise your dev server blocks mine
 - [x] Stop dev servers / Prisma Studio you're not using (each one holds database connections). Only one dev server running, no Prisma Studio
-- [x] Reply OK so we can run `npm run db:reset` together. It clears your 6 duplicate projects + test clients. I'll run it, you don't need to. **→ Suleman: OK, go ahead and reset.**
+- [x] Reply OK so we can run `npm run db:reset` together. ✅ **Reset done by Ali.** It clears your 6 duplicate projects + test clients. I'll run it, you don't need to. **→ Suleman: OK, go ahead and reset.**
 - [x] README: include the **10 demo accounts table** (login page no longer shows them), the **Clients** feature, and `connection_limit` in the env-var notes. Live URL, video link, team name and members 3–4 are still placeholders
 - [x] Have a quick look at the Clients pages and tell me if anything looks off with your design (see reply below)
 
@@ -57,6 +57,15 @@ Hi Suleman, great work on the frontend: I reviewed it (type-check, lint, product
 4. "Last updated" uses the browser's locale format (e.g. 10/7/2026), while every other date uses "7 Oct 2026". Could use `formatDate` for consistency.
 
 None of these block the demo.
+
+### 💬 Reply from Ali
+Thanks! All four done:
+1. ✅ Agent label now says **"Your estimate"** (matches project detail).
+2. ✅ The 4 stat cards moved **above** the two columns (full width), so they no longer squeeze next to the contact card.
+3. ✅ **Notes are now hidden from agents**, enforced in the API (agents receive `notes: ""`), not just hidden in the UI. Agents still see contact person / email / phone / website, since they may need to reach the client.
+4. ✅ "Last updated" now uses `formatDate` ("7 Oct 2026").
+
+`db:reset` done: Aiven now has **10 users, 0 projects, 0 tasks, 0 clients**. Please don't run the transcript on the shared DB again before the demo (or reset afterwards). Next: Vercel deploy.
 
 **What I'm doing next:** reset the DB (after your OK) → deploy to Vercel (`connection_limit=1` there) → live test → send you the live URL for the README.
 
@@ -219,7 +228,9 @@ TranscriptResultDTO { runId, model, projects: ProjectDTO[], taskCount }
 - [ ] Check the transcript route finishes within Vercel's time limit (`maxDuration = 60`); if it times out, switch the primary model to the faster fallback
 - [ ] Live test: login as each role, run the supplied transcript, then the changed-input test (QuickServe integration 12 h, 23 Oct)
 - [ ] Send Suleman the live URL for the README
-- [ ] Before judging: agree with Suleman, run `npm run db:reset` so judges see projects created live
+- [x] `npm run db:reset` after Suleman's OK (DB is empty: 10 users, 0 projects)
+- [x] Suleman's Clients review: 4 fixes (agent label, stat layout, notes hidden from agents in the API, date format)
+- [ ] Before judging: run `npm run db:reset` once more if anyone created test projects
 
 ---
 

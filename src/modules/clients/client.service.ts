@@ -33,7 +33,8 @@ function toClientDTO(c: ClientRow, user: CurrentUser, visibleProjects: ProjectDT
     contactEmail: c.contactEmail,
     contactPhone: c.contactPhone,
     website: c.website,
-    notes: c.notes,
+    // Notes are internal relationship info: admin and managers only, never sent to agents.
+    notes: user.role === "AGENT" ? "" : c.notes,
     projectCount: visibleProjects.length,
     taskCount: visibleProjects.reduce((n, p) => n + p.taskCount, 0),
     totalHours: visibleProjects.reduce((n, p) => n + p.totalHours, 0),
