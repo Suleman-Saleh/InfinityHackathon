@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
+import { ArrowRightIcon } from "@/components/icons";
 import { Avatar, Card, ErrorBanner, LoadingBlock, PageHeader, RoleBadge } from "@/components/ui";
 import { ApiRequestError, api } from "@/lib/api-client";
 import type { UserDTO } from "@/types";
@@ -60,28 +62,34 @@ export default function TeamPage() {
 
       <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
         {shown.map((u) => (
-          <Card key={u.id} className="p-5">
-            <div className="flex items-start gap-3">
-              <Avatar name={u.name} role={u.role} size="lg" />
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="font-semibold text-slate-900">{u.name}</p>
-                  <RoleBadge role={u.role} />
+          <Link key={u.id} href={`/team/${u.id}`} className="group block focus-visible:outline-none">
+            <Card className="flex h-full flex-col p-5 transition-all group-hover:border-brand-200 group-hover:shadow-md group-focus-visible:ring-2 group-focus-visible:ring-brand-600">
+              <div className="flex items-start gap-3">
+                <Avatar name={u.name} role={u.role} size="lg" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-semibold text-slate-900 group-hover:text-brand-700">{u.name}</p>
+                    <RoleBadge role={u.role} />
+                  </div>
+                  <p className="text-sm text-slate-600">{u.specialization}</p>
+                  <p className="truncate text-xs text-slate-400">{u.email}</p>
                 </div>
-                <p className="text-sm text-slate-600">{u.specialization}</p>
-                <p className="truncate text-xs text-slate-400">{u.email}</p>
               </div>
-            </div>
-            {u.skills.length > 0 && (
-              <div className="mt-4 flex flex-wrap gap-1.5">
-                {u.skills.map((s) => (
-                  <span key={s} className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-600">
-                    {s}
-                  </span>
-                ))}
-              </div>
-            )}
-          </Card>
+              {u.skills.length > 0 && (
+                <div className="mt-4 flex flex-wrap gap-1.5">
+                  {u.skills.map((s) => (
+                    <span key={s} className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-600">
+                      {s}
+                    </span>
+                  ))}
+                </div>
+              )}
+              <span className="mt-auto inline-flex items-center gap-1 pt-4 text-sm font-medium text-brand-600">
+                {u.role === "MANAGER" ? "View projects" : "View work"}
+                <ArrowRightIcon className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+              </span>
+            </Card>
+          </Link>
         ))}
       </div>
     </>

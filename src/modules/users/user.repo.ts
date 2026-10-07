@@ -5,6 +5,8 @@ const publicFields = { id: true, name: true, email: true, role: true, specializa
 export const userRepo = {
   findByEmail: (email: string) => prisma.user.findUnique({ where: { email } }),
 
+  findPublicById: (id: string) => prisma.user.findUnique({ where: { id }, select: publicFields }),
+
   listPublic: () =>
     prisma.user.findMany({ select: publicFields, orderBy: [{ role: "asc" }, { id: "asc" }] }),
 };

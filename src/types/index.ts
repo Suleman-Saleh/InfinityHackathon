@@ -74,4 +74,12 @@ export type ClientDetailDTO = ClientDTO & { projects: ProjectDTO[] };
 
 export type ClientUpdateInput = Partial<ClientContact & { name: string }>;
 
+/** A team member's profile and work. Only includes what the viewer is allowed to see. */
+export type TeamMemberDTO = {
+  user: UserDTO;
+  projects: ProjectDTO[]; // projects this person manages
+  tasks: MyTaskDTO[]; // tasks assigned to this person
+  limited: boolean; // true when the viewer can only see part of this person's work
+};
+
 export type ApiError = { error: string; issues?: string[] };
