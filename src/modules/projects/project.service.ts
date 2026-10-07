@@ -11,6 +11,7 @@ export function toProjectDTO(p: ProjectRow): ProjectDTO {
     id: p.id,
     name: p.name,
     clientName: p.clientName,
+    clientId: p.clientId,
     description: p.description,
     deadline: toDateString(p.deadline),
     manager: p.manager,

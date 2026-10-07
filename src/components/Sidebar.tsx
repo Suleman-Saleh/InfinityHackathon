@@ -5,13 +5,14 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { api } from "@/lib/api-client";
 import type { CurrentUser } from "@/types";
-import { CheckListIcon, DashboardIcon, LogoutIcon, MenuIcon, SparkleIcon, UsersIcon } from "./icons";
+import { BuildingIcon, CheckListIcon, DashboardIcon, LogoutIcon, MenuIcon, SparkleIcon, UsersIcon } from "./icons";
 import { Avatar, RoleBadge } from "./ui";
 
 type NavItem = { href: string; label: string; icon: React.ReactNode; match: (path: string) => boolean };
 
 function navFor(user: CurrentUser): NavItem[] {
   const team: NavItem = { href: "/team", label: "Team Directory", icon: <UsersIcon />, match: (p) => p === "/team" };
+  const clients: NavItem = { href: "/clients", label: "Clients", icon: <BuildingIcon />, match: (p) => p.startsWith("/clients") };
   if (user.role === "AGENT") {
     return [
       {
@@ -20,6 +21,7 @@ function navFor(user: CurrentUser): NavItem[] {
         icon: <CheckListIcon />,
         match: (p) => p === "/my-tasks" || p.startsWith("/projects"),
       },
+      clients,
       team,
     ];
   }
@@ -29,10 +31,11 @@ function navFor(user: CurrentUser): NavItem[] {
     icon: <DashboardIcon />,
     match: (p) => p === "/" || p.startsWith("/projects"),
   };
-  if (user.role === "MANAGER") return [home, team];
+  if (user.role === "MANAGER") return [home, clients, team];
   return [
     home,
     { href: "/transcript", label: "Create from Transcript", icon: <SparkleIcon />, match: (p) => p === "/transcript" },
+    clients,
     team,
   ];
 }

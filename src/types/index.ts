@@ -19,6 +19,7 @@ export type ProjectDTO = {
   id: string;
   name: string;
   clientName: string;
+  clientId: string | null;
   description: string;
   deadline: string; // YYYY-MM-DD
   manager: PersonRef;
@@ -46,5 +47,31 @@ export type TranscriptResultDTO = {
   projects: ProjectDTO[];
   taskCount: number;
 };
+
+export type ClientContact = {
+  industry: string;
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string;
+  website: string;
+  notes: string;
+};
+
+export type ClientDTO = ClientContact & {
+  id: string;
+  name: string;
+  // Stats only cover the projects/tasks the current user is allowed to see.
+  projectCount: number;
+  taskCount: number;
+  totalHours: number;
+  nextDeadline: string | null; // YYYY-MM-DD, earliest project deadline
+  managers: PersonRef[];
+  canEdit: boolean;
+  updatedAt: string; // ISO timestamp
+};
+
+export type ClientDetailDTO = ClientDTO & { projects: ProjectDTO[] };
+
+export type ClientUpdateInput = Partial<ClientContact & { name: string }>;
 
 export type ApiError = { error: string; issues?: string[] };

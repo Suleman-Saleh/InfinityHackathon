@@ -34,10 +34,26 @@ model User {
   transcriptRuns  TranscriptRun[]
 }
 
+model Client {
+  id           String   @id @default(cuid())
+  name         String   @unique
+  industry     String   @default("")
+  contactName  String   @default("")
+  contactEmail String   @default("")
+  contactPhone String   @default("")
+  website      String   @default("")
+  notes        String   @default("")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  projects Project[]
+}
+
 model Project {
   id              String   @id @default(cuid())
   name            String
-  clientName      String
+  clientName      String // denormalized display name, kept in sync with Client.name
+  clientId        String?
   description     String   @default("")
   managerId       String
   deadline        DateTime @db.Date
@@ -45,10 +61,12 @@ model Project {
   createdAt       DateTime @default(now())
 
   manager       User           @relation("ProjectManager", fields: [managerId], references: [id])
+  client        Client?        @relation(fields: [clientId], references: [id], onDelete: SetNull)
   transcriptRun TranscriptRun? @relation(fields: [transcriptRunId], references: [id], onDelete: SetNull)
   tasks         Task[]
 
   @@index([managerId])
+  @@index([clientId])
 }
 
 model Task {

@@ -71,6 +71,10 @@ src/
 │   │   ├── project.repo.ts
 │   │   ├── project.service.ts
 │   │   └── project.policy.ts     # canViewProject, projectFilterFor(user)
+│   ├── clients/                  # CRM: client accounts + contact details
+│   │   ├── client.repo.ts
+│   │   ├── client.service.ts     # list, detail, update (validated)
+│   │   └── client.policy.ts      # clientFilterFor(user), canEditClient
 │   ├── tasks/
 │   │   ├── task.repo.ts
 │   │   ├── task.service.ts
@@ -163,12 +167,14 @@ transcript.service.createFromTranscript(user, text)
 
 ```mermaid
 erDiagram
+    Client ||--o{ Project : has
     User ||--o{ Project : manages
     User ||--o{ Task : "assigned to"
     Project ||--o{ Task : contains
     User ||--o{ TranscriptRun : "submitted by"
     TranscriptRun ||--o{ Project : created
 
+    Client { string id PK string name UK string industry string contactName string contactEmail string contactPhone string website string notes }
     User { string id PK "ADMIN, PM01, DEV01..." string name string email UK string passwordHash enum role string specialization string[] skills }
     Project { string id PK string name string clientName string description string managerId FK date deadline string transcriptRunId FK datetime createdAt }
     Task { string id PK string projectId FK string title string description string assigneeId FK date deadline float estimatedHours datetime createdAt }

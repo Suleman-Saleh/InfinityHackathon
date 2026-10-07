@@ -69,7 +69,14 @@ export function ProjectDetail({ id, role }: { id: string; role: Role }) {
       <Card className="mb-8 p-6">
         <h1 className="text-2xl font-semibold tracking-tight text-slate-900">{project.name}</h1>
         <p className="mt-1 text-sm text-slate-500">
-          Client: <span className="font-medium text-slate-700">{project.clientName}</span>
+          Client:{" "}
+          {project.clientId ? (
+            <Link href={`/clients/${project.clientId}`} className="font-medium text-brand-600 hover:underline">
+              {project.clientName}
+            </Link>
+          ) : (
+            <span className="font-medium text-slate-700">{project.clientName}</span>
+          )}
         </p>
 
         <div className="mt-5 flex flex-wrap gap-3 text-sm">

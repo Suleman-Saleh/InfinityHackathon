@@ -3,6 +3,7 @@ import { AIOutputError, completeJSON, type AIResult } from "@/lib/ai";
 import { prisma } from "@/lib/db";
 import { ForbiddenError, UpstreamError, ValidationError } from "@/lib/errors";
 import { fromDateString } from "@/lib/format";
+import { clientRepo } from "@/modules/clients/client.repo";
 import { toProjectDTO } from "@/modules/projects/project.service";
 import { userService } from "@/modules/users/user.service";
 import type { CurrentUser, TranscriptResultDTO } from "@/types";
@@ -70,11 +71,14 @@ export const transcriptService = {
 
       const projects = [];
       for (const p of result.projects) {
+        // Reuse the existing client record (case-insensitive) or create a new one.
+        const client = await clientRepo.findOrCreateByName(tx, p.clientName);
         projects.push(
           await tx.project.create({
             data: {
               name: p.name,
-              clientName: p.clientName,
+              clientName: client.name,
+              clientId: client.id,
               description: p.description,
               managerId: p.managerId,
               deadline: fromDateString(p.deadline),

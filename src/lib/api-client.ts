@@ -11,7 +11,7 @@ export class ApiRequestError extends Error {
   }
 }
 
-type Options = { method?: "GET" | "POST"; body?: unknown };
+type Options = { method?: "GET" | "POST" | "PATCH"; body?: unknown };
 
 /** Calls our own API with the session cookie. Throws ApiRequestError on any non-2xx response. */
 export async function api<T>(path: string, { method = "GET", body }: Options = {}): Promise<T> {
