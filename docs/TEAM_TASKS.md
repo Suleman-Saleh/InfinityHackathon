@@ -154,6 +154,16 @@ TranscriptResultDTO { runId, model, projects: ProjectDTO[], taskCount }
 - [x] Direct access check: Ali / Ayesha calling QuickServe or HelpDeskPro → `403`; forged cookie → `401`
 - [x] `prisma/reset.ts` deletes projects/tasks/runs but keeps users (needs npm script)
 
+### Phase 6 · Review Frontend + Deploy
+- [ ] Pull the `frontend` branch, run it locally, check the pages call the API correctly
+- [ ] Review / approve merge of `frontend` → `main`
+- [ ] `npm run build` passes on `main` with the frontend included
+- [ ] Vercel: import the GitHub repo, set env vars (`DATABASE_URL`, `GROQ_API_KEY`, `GROQ_MODEL`, `GROQ_FALLBACK_MODEL`, `SESSION_SECRET`), deploy `main`
+- [ ] Check the transcript route finishes within Vercel's time limit (`maxDuration = 60`); if it times out, switch the primary model to the faster fallback
+- [ ] Live test: login as each role, run the supplied transcript, then the changed-input test (QuickServe integration 12 h, 23 Oct)
+- [ ] Send Suleman the live URL for the README
+- [ ] Before judging: agree with Suleman, run `npm run db:reset` so judges see projects created live
+
 ---
 
 ## Malik Muhammad Suleman Saleh — Frontend + Integration
